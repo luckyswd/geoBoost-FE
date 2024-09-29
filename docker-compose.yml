@@ -3,7 +3,7 @@ version: '3.8'
 services:
   react-app:
     image: node:20-alpine
-    container_name: front-geoBoost-react
+    container_name: geoBoost-front-react
     working_dir: /app
     ports:
       - "3000:3000"
