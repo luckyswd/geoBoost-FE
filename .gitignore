@@ -1,1 +1,3 @@
 .idea
+docker/mysql
+docker/ngrok/ngrok.yml

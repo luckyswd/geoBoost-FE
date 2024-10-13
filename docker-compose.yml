@@ -1,28 +1,77 @@
-version: '3.8'
-
+version: "3"
 services:
-  react-app:
-    image: node:20-alpine
-    container_name: geoBoost-front-react
-    working_dir: /app
+  nginx:
+    image: nginx:stable-alpine
+    container_name: nginx-geo_boost
+    restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "8081:80"
     volumes:
-      - .:/app
-    command: sh -c "cd app && npm install && npm run start"
+      - ./BE:/var/www/html
+      - ./FE/build:/var/www/html/build
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - php
     networks:
       - app-network
 
-#  nginx:
-#    image: nginx:alpine
-#    container_name: front-geoBoost-nginx
-#    volumes:
-#      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
-#      - ./app:/usr/share/nginx/html
-#    ports:
-#      - "80:80"
-#    networks:
-#      - app-network
+  php:
+    container_name: php-geo_boost
+    restart: unless-stopped
+    build: docker/php
+    links:
+      - mysql
+    volumes:
+      - ./BE:/var/www/html
+    depends_on:
+      - mysql
+    networks:
+      - app-network
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-geo_boost
+    restart: unless-stopped
+    command: --max_allowed_packet=16M
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./docker/mysql/var/mysql:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: test
+      MYSQL_DATABASE: test
+      MYSQL_USER: test
+      MYSQL_PASSWORD: test
+    networks:
+      - app-network
+
+  redis:
+    image: redis:latest
+    container_name: redis-geo_boost
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+    command: ['--requirepass test123']
+
+  ngrok:
+    container_name: ngrok-geo_boost
+    image: ngrok/ngrok:3
+    restart: unless-stopped
+    command:
+      - "start"
+      - "--all"
+      - "--config"
+      - "/etc/ngrok.yml"
+    volumes:
+      - ./docker/ngrok/ngrok.yml:/etc/ngrok.yml
+    ports:
+      - 4040:4040
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - app-network
 
 networks:
   app-network:

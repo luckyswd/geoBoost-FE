@@ -1,0 +1,13 @@
+framework:
+    cache:
+        app: cache.adapter.redis
+        system: cache.adapter.redis
+        prefix_seed: '%env(REDIS_PROJECT)%'
+        default_redis_provider: 'redis://%env(REDIS_AUTH_LOCAL)%@%env(REDIS_HOST_LOCAL)%:%env(REDIS_PORT)%/%env(REDIS_DB)%'
+        pools:
+            cache.redis:
+                adapter: cache.adapter.redis
+                default_lifetime: 1800
+                tags: cache.tags
+            cache.tags:
+                adapter: cache.adapter.redis

@@ -1,0 +1,2 @@
+0 1 * * * /usr/bin/php /path/to/your/project/bin/console app:import-holidays >> /path/to/your/project/var/log/holidays_import.log 2>&1
+0 2 * * * /usr/bin/php /path/to/update-geolite2.sh >> /path/to/your/project/var/log/geolite2.log 2>&1
