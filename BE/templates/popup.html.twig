@@ -1,0 +1,334 @@
+
+<style>
+    :root {
+        --geoboost-main-color: {{ mainColor ?? '#00A885' }};
+        --geoboost-text-color: {{ textColor ?? '#272B35B2'}};
+        --geoboost-disabled-color: {{ disabledColor ?? '#cccccc' }};
+        --geoboost-border-radius: {{ borderRadius ?? '6px'}};
+        --geoboost-white-color: {{ whiteColor ?? '#fff' }};
+    }
+    .geoboost {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1000;
+    }
+
+    .geoboost__overlay {
+        position: absolute;
+        z-index: 999;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        top: 0;
+        background: rgba(0, 0, 0, .5);
+    }
+
+    .geoboost__container {
+        position: fixed;
+        align-items: center;
+        z-index: 10001;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 85%;
+        max-width: 1024px;
+        max-height: 768px;
+        overflow: hidden;
+        border-radius: var(--geoboost-border-radius);
+        background: var(--geoboost-white-color);
+        box-shadow: 0 4px 16px 0 rgba(184, 191, 203, .48);
+        padding: 0 28px;
+    }
+
+    .geoboost__wrapper {
+        padding: 28px 0;
+    }
+
+    .geoboost__holidays {
+        list-style: none;
+        display: flex;
+        gap: 8px;
+        padding-left: 0;
+        flex-wrap: wrap;
+        padding-bottom: 32px;
+        margin: 0;
+        @media (max-width: 992px) {
+            flex-wrap: nowrap;
+            overflow-x: scroll;
+            padding-bottom: 12px;
+            margin-bottom: 12px;
+        }
+    }
+
+    .geoboost__holiday {
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 21px;
+        text-align: left;
+        color: var(--geoboost-text-color);
+        padding: 9px 16px;
+        border-radius: var(--geoboost-border-radius);
+        cursor: pointer;
+        white-space: nowrap;
+        border: 1px solid var(--geoboost-main-color);
+        transition: 250ms ease-in-out;
+    }
+
+    .geoboost__holiday:hover {
+        color: var(--geoboost-white-color);
+        background: var(--geoboost-main-color);
+    }
+
+    .geoboost__holiday.active {
+        color: var(--geoboost-white-color);
+        background: var(--geoboost-main-color);
+    }
+
+    .geoboost__products {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+    }
+
+    .geoboost__product {
+        padding: 12px;
+        border-radius: var(--geoboost-border-radius);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid var(--geoboost-main-color);
+        text-decoration: none;
+        transition: 250ms ease-in-out;
+    }
+
+    .geoboost__product:hover {
+        transform: scale(1.05);
+    }
+
+    .geoboost__product-img {
+        width: 100%;
+        height: 100%;
+        max-height: 200px;
+        border-radius: var(--geoboost-border-radius);
+        overflow: hidden;
+    }
+
+    .geoboost__product-img img {
+        object-fit: cover;
+        object-position: center;
+        width: 100%;
+        height: 100%;
+    }
+
+    .geoboost__product-title {
+        margin: 0;
+        color: var(--geoboost-text-color);
+        font-size: 18px;
+        line-height: normal;
+    }
+
+    .geoboost__pagenav {
+        overflow: hidden;
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .geoboost__pagenav ul {
+        display: flex;
+        gap: 8px;
+    }
+
+    .geoboost__pagenav li {
+        float: left;
+        list-style: none;
+        height: 32px;
+        font-size: 1em;
+        color: var(--geoboost-text-color);
+    }
+
+    .geoboost__pagenav li button {
+        font-weight: 400;
+        color: var(--geoboost-text-color);
+        position: relative;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        border-radius: var(--geoboost-border-radius);
+        border: 1px solid var(--geoboost-main-color);
+        background-color: var(--geoboost-white-color);
+        transition: 250ms ease-in-out;
+    }
+
+    .geoboost__pagenav li button svg path {
+        fill: var(--geoboost-text-color);
+    }
+
+    .geoboost__pagenav li button:hover {
+        cursor: pointer;
+        background-color: var(--geoboost-main-color);
+        color: var(--geoboost-white-color);
+    }
+
+    .geoboost__pagenav li button:hover svg path {
+        fill: var(--geoboost-white-color);
+    }
+
+    .geoboost__pagenav li button:active {
+        background-color: var(--geoboost-main-color);
+        color: var(--geoboost-white-color);
+    }
+
+    .geoboost__pagenav li.active button {
+        background-color: var(--geoboost-main-color);
+        color: var(--geoboost-white-color);
+    }
+
+    .geoboost__pagenav li button[disabled] {
+        background-color: var(--geoboost-white-color);
+        cursor: default;
+        border-color: var(--geoboost-disabled-color);
+    }
+
+    .geoboost__pagenav li button[disabled] svg path {
+        fill: var(--geoboost-disabled-color);
+    }
+
+    .geoboost__pagenav li button[disabled]:hover {
+        background-color: var(--geoboost-white-color);
+    }
+
+    .geoboost__pagenav .dots {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        width: 100%;
+        height: 100%;
+    }
+
+    .geoboost__pagenav .dot {
+        background-color: var(--geoboost-disabled-color);
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+    }
+</style>
+
+<section class="geoboost">
+    <div class="geoboost__container">
+        <div class="geoboost__wrapper">
+            <ul class="geoboost__holidays">
+                <li class="geoboost__holiday active">
+                    test 1
+                </li>
+                <li class="geoboost__holiday">
+                    test 2
+                </li>
+                <li class="geoboost__holiday">
+                    test 3
+                </li>
+                <li class="geoboost__holiday">
+                    test 4
+                </li>
+                <li class="geoboost__holiday">
+                    test 4
+                </li>
+                <li class="geoboost__holiday">
+                    test 4
+                </li>
+                <li class="geoboost__holiday">
+                    test 4
+                </li>
+                <li class="geoboost__holiday">
+                    test 4
+                </li>
+                <li class="geoboost__holiday">
+                    test 4
+                </li>
+                <li class="geoboost__holiday">
+                    test 4
+                </li>
+                <li class="geoboost__holiday">
+                    test 4
+                </li>
+                <li class="geoboost__holiday">
+                    test 4
+                </li>
+                <li class="geoboost__holiday">
+                    test 4
+                </li>
+                <li class="geoboost__holiday">
+                    test 4
+                </li>
+            </ul>
+            <div class="geoboost__products">
+                <a href="#" class="geoboost__product">
+                    <div class="geoboost__product-img">
+                        <img src="https://fakeimg.pl/350x200/?text=Hello">
+
+                    </div>
+                    <h3 class="geoboost__product-title">
+                        Title
+                    </h3>
+                </a>
+                <a href="#" class="geoboost__product">
+                    <div class="geoboost__product-img">
+                        <img src="https://fakeimg.pl/350x200/?text=Hello">
+
+                    </div>
+                    <h3 class="geoboost__product-title">
+                        Title
+                    </h3>
+                </a>
+                <a href="#" class="geoboost__product">
+                    <div class="geoboost__product-img">
+                        <img src="https://fakeimg.pl/350x200/?text=Hello">
+
+                    </div>
+                    <h3 class="geoboost__product-title">
+                        Title
+                    </h3>
+                </a>
+                <a href="#" class="geoboost__product">
+                    <div class="geoboost__product-img">
+                        <img src="https://fakeimg.pl/350x200/?text=Hello">
+
+                    </div>
+                    <h3 class="geoboost__product-title">
+                        Title
+                    </h3>
+                </a>
+                <a href="#" class="geoboost__product">
+                    <div class="geoboost__product-img">
+                        <img src="https://fakeimg.pl/350x200/?text=Hello">
+
+                    </div>
+                    <h3 class="geoboost__product-title">
+                        Title
+                    </h3>
+                </a>
+                <a href="#" class="geoboost__product">
+                    <div class="geoboost__product-img">
+                        <img src="https://fakeimg.pl/350x200/?text=Hello">
+
+                    </div>
+                    <h3 class="geoboost__product-title">
+                        Title
+                    </h3>
+                </a>
+            </div>
+            <div class="geoboost__pagination">
+
+            </div>
+            {% include 'pagination.html.twig' %}
+        </div>
+    </div>
+    <div class="geoboost__overlay"></div>
+</section>

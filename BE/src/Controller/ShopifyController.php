@@ -11,7 +11,6 @@ use App\Services\Shopify\ShopifyApiService;
 use App\Services\Shopify\ShopifyService;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
-use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -47,21 +46,18 @@ class ShopifyController extends AbstractController
         ShopRepository $shopRepository,
         ShopifyService $shopifyService,
         SettingService $settingService,
-        LoggerInterface $logger,
     ): Response {
         $domain = $request->get('shop') ?? null;
         $code = $request->get('code') ?? null;
         $hmac = $request->get('hmac') ?? null;
         $query = $request->query->all();
 
-        ShopifyService::shopifyInstallValidation($domain, $code, $hmac, $query, $logger);
-        unset($query['code']);
-        $query['id_token'] = $code;
+        ShopifyService::shopifyInstallValidation($domain, $code, $hmac, $query);
 
         $shopifyApiKey = getenv('SHOPIFY_API_KEY');
         $redisKeyAccessToken = "$domain:access_token";
 
-//        if (!Redis::get($redisKeyAccessToken)) {
+        if (!Redis::get($redisKeyAccessToken)) {
             $accessTokenResponse = $httpClient->request('POST', "https://$domain/admin/oauth/access_token", [
                 'json' => [
                     'client_id' => $shopifyApiKey,
@@ -72,15 +68,15 @@ class ShopifyController extends AbstractController
 
             $responseData = $accessTokenResponse->toArray();
             $accessToken = $responseData['access_token'] ?? null;
-            Redis::set($redisKeyAccessToken, $accessToken, 86400);
-//        } else {
-//            $accessToken = Redis::get($redisKeyAccessToken);
-//        }
+            Redis::set($redisKeyAccessToken, $accessToken);
+        } else {
+            $accessToken = Redis::get($redisKeyAccessToken);
+        }
 
         $shop = $shopRepository->findOneBy(['domain' => $domain]);
 
         if ($shop && $shop->getActive()) {
-            return new RedirectResponse(getenv('SHOPIFY_FRONT_URL') . "?" . http_build_query($query));
+            return new RedirectResponse(getenv('SHOPIFY_FRONT_URL'));
         }
 
         if (!$shop) {
@@ -94,8 +90,7 @@ class ShopifyController extends AbstractController
         $response = ShopifyApiService::client($shop)->get('shop.json')->getDecodedBody();
 
         if (isset($response['errors'])) {
-            $logger->error($response['errors']);
-
+            #TODO add logs
             throw new Exception($response['errors']);
         }
 
@@ -112,7 +107,7 @@ class ShopifyController extends AbstractController
         $entityManager->flush();
         $shopifyService->registerAppUninstalledWebhook($shop);
 
-        $redirectUrl = "https://$domain/admin/apps/$shopifyApiKey?" . http_build_query($query);
+        $redirectUrl = "https://$domain/admin/apps/$shopifyApiKey";
 
         return new RedirectResponse($redirectUrl);
     }

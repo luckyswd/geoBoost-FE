@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Repository\HolidayRepository;
 use App\Repository\ShopRepository;
 use App\Services\GeoLocationService;
+use App\Services\ShopLogger;
 use App\Traits\ApiResponseTrait;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -23,7 +24,8 @@ class PopUpController extends AbstractController
         ShopRepository     $shopRepository,
         HolidayRepository  $holidayRepository,
         Request            $request,
-        GeoLocationService $geoLocationService
+        GeoLocationService $geoLocationService,
+        ShopLogger         $shopLogger,
     ): JsonResponse
     {
         $domain = $request->get('domain', 'max-geoboost.myshopify.com');
@@ -35,23 +37,24 @@ class PopUpController extends AbstractController
 
             return $this->error('Domain not found', Response::HTTP_NOT_FOUND);
         }
+        $shopLogger = $shopLogger->createShopLogger($domain);
 
         if (!$clientIp) {
-            $logger->error("IP-адрес клиента не найден");
+            $shopLogger->error("IP-адрес клиента не найден");
 
             return $this->error('Client IP not found', Response::HTTP_NOT_FOUND);
         }
 
         $shop = $shopRepository->findOneBy(['domain' => $domain]);
         if (!$shop) {
-            $logger->error("Магазин не найден");
+            $shopLogger->error("Магазин не найден");
 
             return $this->error('Shop not found', Response::HTTP_NOT_FOUND);
         }
 
         $geoData = $geoLocationService->getLocationByIp($clientIp);
         if (!$geoData) {
-            $logger->error("Геоданные не найдены");
+            $shopLogger->error("Геоданные не найдены");
 
             return $this->error('Geo data not found', Response::HTTP_NOT_FOUND);
         }
@@ -63,7 +66,7 @@ class PopUpController extends AbstractController
             $upcomingHolidays = $holidayRepository->findUpcomingHolidaysForCountry($geoData['countryName'], $endDate);
 
         } catch (\Exception $e) {
-            $logger->error("Предстоящие праздники не найдены", ['exception' => $e]);
+            $shopLogger->error("Предстоящие праздники не найдены", ['exception' => $e]);
 
             return $this->error('No upcoming holidays found', Response::HTTP_NOT_FOUND);
         }

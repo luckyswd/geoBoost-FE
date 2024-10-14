@@ -12,16 +12,6 @@ when@dev:
                 path: "%kernel.logs_dir%/%kernel.environment%.log"
                 level: debug
                 channels: ["!event"]
-            install:
-                type: stream
-                path: "%kernel.logs_dir%/%kernel.environment%.install.log"
-                level: info
-                channels: ["install"]
-            uninstall:
-                type: stream
-                path: "%kernel.logs_dir%/%kernel.environment%.uninstall.log"
-                level: info
-                channels: ["uninstall"]
             console:
                 type: console
                 process_psr_3_messages: false

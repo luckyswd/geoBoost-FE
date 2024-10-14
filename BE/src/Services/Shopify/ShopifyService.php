@@ -5,14 +5,12 @@ declare(strict_types=1);
 namespace App\Services\Shopify;
 
 use App\Entity\Shop;
-use Psr\Log\LoggerInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class ShopifyService
 {
     public function __construct(
         private readonly HttpClientInterface $httpClient,
-        private readonly LoggerInterface $logger,
     ) {
     }
 
@@ -20,12 +18,10 @@ class ShopifyService
         string|null $domain,
         string|null $code,
         string|null $hmac,
-        array $query,
-        LoggerInterface $logger,
+        array $query
     ): void {
         if (!$domain || !$code || !$hmac) {
-            $logger->error("Missing parameters. domain: $domain code: $code hmac: $hmac");
-
+            #TODO add logs
             throw new \Exception('Missing parameters.');
         }
 
@@ -35,8 +31,7 @@ class ShopifyService
         $computedHmac = hash_hmac('sha256', http_build_query($query), getenv('SHOPIFY_SECRET_KEY'));
 
         if (!hash_equals($hmac, $computedHmac)) {
-            $logger->error("Invalid HMAC validation. domain: $domain code: $code hmac: $hmac");
-
+            #TODO add logs
             throw new \Exception('Invalid HMAC validation.');
         }
     }
@@ -62,7 +57,7 @@ class ShopifyService
         ]);
 
         if ($response->getStatusCode() !== 201) {
-            $this->logger->error("Fail registerAppUninstalledWebhook domain: $domain");
+            #TODO add logs
         }
     }
 }
