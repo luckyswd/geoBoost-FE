@@ -7,7 +7,6 @@ use App\Repository\ShopRepository;
 use App\Services\GeoLocationService;
 use App\Services\ShopLogger;
 use App\Traits\ApiResponseTrait;
-use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -20,41 +19,37 @@ class PopUpController extends AbstractController
 
     #[Route('/get-products', name: 'get-products', methods: ['POST'])]
     public function getProducts(
-        LoggerInterface    $logger,
         ShopRepository     $shopRepository,
         HolidayRepository  $holidayRepository,
         Request            $request,
         GeoLocationService $geoLocationService,
-        ShopLogger         $shopLogger,
-    ): JsonResponse
-    {
+    ): JsonResponse {
         $domain = $request->get('domain', 'max-geoboost.myshopify.com');
         $clientIp = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'];
-        $logger->info('Начало обработки получения продуктов для домена: ' . $domain);
+        ShopLogger::create($domain)->info('Начало обработки получения продуктов для домена: ' . $domain);
 
         if (!$domain) {
-            $logger->error("Домен не найден");
+            ShopLogger::create($domain)->error("Домен не найден");
 
             return $this->error('Domain not found', Response::HTTP_NOT_FOUND);
         }
-        $shopLogger = $shopLogger->createShopLogger($domain);
 
         if (!$clientIp) {
-            $shopLogger->error("IP-адрес клиента не найден");
+            Shoplogger::create($domain)->error("IP-адрес клиента не найден");
 
             return $this->error('Client IP not found', Response::HTTP_NOT_FOUND);
         }
 
         $shop = $shopRepository->findOneBy(['domain' => $domain]);
         if (!$shop) {
-            $shopLogger->error("Магазин не найден");
+            Shoplogger::create($domain)->error("Магазин не найден");
 
             return $this->error('Shop not found', Response::HTTP_NOT_FOUND);
         }
 
         $geoData = $geoLocationService->getLocationByIp($clientIp);
         if (!$geoData) {
-            $shopLogger->error("Геоданные не найдены");
+            Shoplogger::create($domain)->error("Геоданные не найдены");
 
             return $this->error('Geo data not found', Response::HTTP_NOT_FOUND);
         }
@@ -66,7 +61,7 @@ class PopUpController extends AbstractController
             $upcomingHolidays = $holidayRepository->findUpcomingHolidaysForCountry($geoData['countryName'], $endDate);
 
         } catch (\Exception $e) {
-            $shopLogger->error("Предстоящие праздники не найдены", ['exception' => $e]);
+            Shoplogger::creat($domain)->error("Предстоящие праздники не найдены", ['exception' => $e]);
 
             return $this->error('No upcoming holidays found', Response::HTTP_NOT_FOUND);
         }

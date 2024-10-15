@@ -5,7 +5,7 @@ services:
     container_name: nginx-geo_boost
     restart: unless-stopped
     ports:
-      - "8081:80"
+      - "80:80"
     volumes:
       - ./BE:/var/www/html
       - ./FE/build:/var/www/html/build

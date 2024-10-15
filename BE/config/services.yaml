@@ -27,7 +27,3 @@ services:
     App\Services\AleshaService\AleshaService:
         arguments:
             $projectDir: '%kernel.project_dir%'
-
-    App\Services\ShopLogger:
-        arguments:
-            $logsDir: '%kernel.logs_dir%'

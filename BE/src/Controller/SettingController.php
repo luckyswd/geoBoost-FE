@@ -26,36 +26,33 @@ class SettingController extends AbstractController
         ShopRepository $shopRepository,
         Request $request,
         SettingService $settingService,
-        ShopLogger $shopLogger
     ): JsonResponse {
         $domain = $request->getPayload()->get('domain');
 
         if (!$domain) {
             throw new BadRequestHttpException("The 'domain' parameter is missing.");
         }
-        $shopLogger = $shopLogger->createShopLogger($domain);
 
-
-        $shopLogger->info("Начинаем активацию приложения для: " . $domain);
+        ShopLogger::create($domain)->info("Начинаем активацию приложения для: " . $domain);
 
         try {
             $shop = $shopRepository->findOneBy(['domain' => $domain]);
 
             if (!$shop) {
-                $shopLogger->info("\nВ БД не был найден shop с таким доменом: " . $domain);
+                ShopLogger::create($domain)->info("\nВ БД не был найден shop с таким доменом: " . $domain);
 
                 return $this->error('domain not found', Response::HTTP_NOT_FOUND);
             }
 
-            $scriptTagService = new ScriptTagService($shop, $shopLogger);
+            $scriptTagService = new ScriptTagService($shop);
             $scriptTagService->addCustomScriptTag('https://staging-truewealthadvisorygroup.kinsta.cloud/app/themes/twag/dist/scripts/popup.js');
             $settingService->setSetting($shop, SettingKey::ACTIVATED->name, true);
 
-            $shopLogger->info("\nПриложение успешно активирвана для: " . $domain);
+            ShopLogger::create($domain)->info("\nПриложение успешно активирвана для: " . $domain);
 
             return $this->success(['message' => 'success']);
         } catch (\Exception $e) {
-            $shopLogger->Error(sprintf("\nОшибка при активирвана приложения для: %s. Ошиюка: %s", $domain, $e->getMessage()));
+            ShopLogger::create($domain)->Error(sprintf("\nОшибка при активирвана приложения для: %s. Ошиюка: %s", $domain, $e->getMessage()));
 
             return $this->error($e->getMessage());
         }

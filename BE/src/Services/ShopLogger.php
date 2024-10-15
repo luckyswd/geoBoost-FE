@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Monolog\Level;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 
@@ -12,27 +13,19 @@ use Monolog\Handler\StreamHandler;
  */
 class ShopLogger
 {
-    private string $logsDir;
-
-    public function __construct(string $logsDir)
-    {
-        $this->logsDir = $logsDir;
-    }
+    private static ?Logger $logger = null;
 
     /**
      * Создает и возвращает логгер для конкретного магазина.
-     *
-     * @param string $shopDomain Домен магазина, для которого будет создан логгер.
-     * @return Logger Настроенный логгер для конкретного магазина.
      */
-    public function createShopLogger(string $shopDomain): Logger
+    public static function create(string $domain): Logger
     {
-        $logger = new Logger('shop');
+        self::$logger = self::$logger ?? new Logger('shop');
 
         $logFile = sprintf(
             '%s/%s/%s.log',
-            $this->logsDir,
-            $shopDomain,
+            getenv('SHOP_LOG_PATH'),
+            $domain,
             (new \DateTime())->format('Y-m-d')
         );
 
@@ -40,8 +33,8 @@ class ShopLogger
             mkdir(dirname($logFile), 0777, true);
         }
 
-        $logger->pushHandler(new StreamHandler($logFile, Logger::INFO));
+        self::$logger->pushHandler(new StreamHandler($logFile, Level::Info));
 
-        return $logger;
+        return self::$logger;
     }
 }

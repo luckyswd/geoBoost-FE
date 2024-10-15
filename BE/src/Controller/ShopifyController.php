@@ -9,6 +9,7 @@ use App\Services\Cache\Redis;
 use App\Services\Setting\SettingService;
 use App\Services\Shopify\ShopifyApiService;
 use App\Services\Shopify\ShopifyService;
+use App\Services\ShopLogger;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -16,11 +17,11 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
 
+#[Route('/shopify')]
 class ShopifyController extends AbstractController
 {
-    #[Route('/', name: 'shopify_authorize', methods: ['GET'])]
+    #[Route('/install', name: 'shopify_install', methods: ['GET'])]
     public function authorize(Request $request): RedirectResponse
     {
         $shop = $request->get('shop');
@@ -38,10 +39,9 @@ class ShopifyController extends AbstractController
         return new RedirectResponse($installUrl);
     }
 
-    #[Route('/shopify/callback', name: 'shopify_callback')]
+    #[Route('/callback', name: 'shopify_callback', methods: ['GET'])]
     public function callback(
         Request $request,
-        HttpClientInterface $httpClient,
         EntityManagerInterface $entityManager,
         ShopRepository $shopRepository,
         ShopifyService $shopifyService,
@@ -54,29 +54,11 @@ class ShopifyController extends AbstractController
 
         ShopifyService::shopifyInstallValidation($domain, $code, $hmac, $query);
 
-        $shopifyApiKey = getenv('SHOPIFY_API_KEY');
-        $redisKeyAccessToken = "$domain:access_token";
-
-        if (!Redis::get($redisKeyAccessToken)) {
-            $accessTokenResponse = $httpClient->request('POST', "https://$domain/admin/oauth/access_token", [
-                'json' => [
-                    'client_id' => $shopifyApiKey,
-                    'client_secret' => getenv('SHOPIFY_SECRET_KEY'),
-                    'code' => $code,
-                ]
-            ]);
-
-            $responseData = $accessTokenResponse->toArray();
-            $accessToken = $responseData['access_token'] ?? null;
-            Redis::set($redisKeyAccessToken, $accessToken);
-        } else {
-            $accessToken = Redis::get($redisKeyAccessToken);
-        }
-
+        $accessToken = $shopifyService->getAccessToken($domain, $code);
         $shop = $shopRepository->findOneBy(['domain' => $domain]);
 
         if ($shop && $shop->getActive()) {
-            return new RedirectResponse(getenv('SHOPIFY_FRONT_URL'));
+            return new RedirectResponse(ShopifyService::getRedirectUrl($domain));
         }
 
         if (!$shop) {
@@ -90,7 +72,8 @@ class ShopifyController extends AbstractController
         $response = ShopifyApiService::client($shop)->get('shop.json')->getDecodedBody();
 
         if (isset($response['errors'])) {
-            #TODO add logs
+            ShopLogger::create($domain)->info($response['errors']);
+
             throw new Exception($response['errors']);
         }
 
@@ -107,12 +90,10 @@ class ShopifyController extends AbstractController
         $entityManager->flush();
         $shopifyService->registerAppUninstalledWebhook($shop);
 
-        $redirectUrl = "https://$domain/admin/apps/$shopifyApiKey";
-
-        return new RedirectResponse($redirectUrl);
+        return new RedirectResponse(ShopifyService::getRedirectUrl($domain));
     }
 
-    #[Route('/shopify/webhook/uninstalled', name: 'shopify_uninstalled', methods: ['POST'])]
+    #[Route('/webhook/uninstalled', name: 'shopify_uninstalled', methods: ['POST'])]
     public function uninstalled(
         Request $request,
         ShopRepository $shopRepository,

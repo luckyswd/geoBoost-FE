@@ -4,6 +4,7 @@ namespace App\Services\Shopify\RESTAdminAPI\OnlineStore;
 
 use App\Entity\Shop;
 use App\Services\Shopify\RESTAdminAPI\BaseAdminAPI;
+use App\Services\ShopLogger;
 use GuzzleHttp\Exception\RequestException;
 use Psr\Log\LoggerInterface;
 
@@ -37,15 +38,15 @@ class AssetService extends BaseAdminAPI
         ];
 
 //        try {
-        $this->logger->info("\nОтправка запроса на добавление CSS в Shopify API...");
+        ShopLogger::create($this->shop->getDomain())->info("\nОтправка запроса на добавление CSS в Shopify API...");
         $response = $this->httpClient->put(sprintf('/admin/api/%s/themes/%s/assets.json', $this->apiVersion, $this->activeTheme['id']), $body);
 
 
-        $this->logger->info("\nCSS успешно добавлен в тему.");
+        ShopLogger::create($this->shop->getDomain())->info("\nCSS успешно добавлен в тему.");
 
         return json_decode($response->getBody()->getContents(), true);
 //        } catch (RequestException $e) {
-//            $this->logger->error("\nНе удалось добавить CSS: " . $e->getMessage());
+//            ShopLogger::create($this->shop->getDomain())->error("\nНе удалось добавить CSS: " . $e->getMessage());
 //
 //            return null;
 //        }
@@ -69,10 +70,9 @@ class AssetService extends BaseAdminAPI
 
             return json_decode($response->getBody()->getContents(), true);
         } catch (RequestException $e) {
-            $this->logger->error("Не удалось получить список скриптов: " . $e->getMessage());
+            ShopLogger::create($this->shop->getDomain())->error("Не удалось получить список скриптов: " . $e->getMessage());
 
             return null;
         }
     }
-
 }

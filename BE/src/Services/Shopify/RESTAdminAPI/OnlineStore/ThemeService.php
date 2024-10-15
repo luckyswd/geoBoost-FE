@@ -2,8 +2,8 @@
 
 namespace App\Services\Shopify\RESTAdminAPI\OnlineStore;
 
-
 use App\Services\Shopify\RESTAdminAPI\BaseAdminAPI;
+use App\Services\ShopLogger;
 use Psr\Http\Client\ClientExceptionInterface;
 
 /**
@@ -21,12 +21,12 @@ class ThemeService extends BaseAdminAPI
     public function getThemes(): array|null
     {
         try {
-            $this->logger->info("Запрос списка тем для магазина: " . $this->shop->getDomain());
+            ShopLogger::create($this->shop->getDomain())->info("Запрос списка тем для магазина: " . $this->shop->getDomain());
             $response = $this->httpClient->get('/admin/api/' . $this->apiVersion . '/themes.json');
 
             return json_decode($response->getBody()->getContents(), true)['themes'];
         } catch (\Exception $e) {
-            $this->logger->error("\n Ошибка при получении списка тем: " . $e->getMessage(), ['shop' => $this->shop->getDomain()]);
+            ShopLogger::create($this->shop->getDomain())->error("\n Ошибка при получении списка тем: " . $e->getMessage(), ['shop' => $this->shop->getDomain()]);
 
             return null;
         }
@@ -46,15 +46,17 @@ class ThemeService extends BaseAdminAPI
             return null;
         }
 
-        $this->logger->info("Обработка поиска активной темы: " . $this->shop->getDomain());
+        ShopLogger::create($this->shop->getDomain())->info("Обработка поиска активной темы: " . $this->shop->getDomain());
         foreach ($themes as $theme) {
             if ($theme['role'] == 'main') {
-                $this->logger->info("\nНайдена активная тема: " . $theme['name'], ['shop' => $this->shop->getDomain()]);
+                ShopLogger::create($this->shop->getDomain())->info("\nНайдена активная тема: " . $theme['name'], ['shop' => $this->shop->getDomain()]);
+
                 return $theme;
             }
         }
 
-        $this->logger->info("\nАктивная тема не найдена: " . $this->shop->getDomain());
+        ShopLogger::create($this->shop->getDomain())->info("\nАктивная тема не найдена: " . $this->shop->getDomain());
+
         return null;
     }
 }
