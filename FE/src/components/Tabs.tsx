@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Tabs, Page } from '@shopify/polaris';
+import React, {useState} from 'react';
+import {Tabs, Page} from '@shopify/polaris';
 import TabContent from "./TabContent";
 
 function TabsComponent() {
@@ -10,15 +10,15 @@ function TabsComponent() {
     };
 
     const tabs = [
-        { id: 'dashboard', content: 'Dashboard' },
-        { id: 'holidays', content: 'Holidays' },
-        { id: 'settings', content: 'Settings' },
+        {id: 'dashboard', content: 'Dashboard'},
+        {id: 'holidays', content: 'Holidays'},
+        {id: 'settings', content: 'Settings'},
     ];
 
     return (
         <Tabs tabs={tabs} selected={selected} onSelect={handleTabChange}>
-            <Page fullWidth>
-                <TabContent selectedTab={selected} />
+            <Page>
+                <TabContent selectedTab={selected}/>
             </Page>
         </Tabs>
     );

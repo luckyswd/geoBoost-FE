@@ -3,7 +3,7 @@ import PopupActivated from "./Settings/PopupActivated";
 
 export default function Settings() {
     return (
-        <BlockStack gap="500">
+        <BlockStack gap="300">
             <PopupActivated/>
         </BlockStack>
     );

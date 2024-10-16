@@ -4,18 +4,18 @@ import {apiFetch} from "../../../api";
 import {useSettings} from "../../../Provaiders/SettingsContext";
 import {ACTIVATED} from "./type";
 
-interface PopupResponse {
-    data: {
-        value: boolean;
-    };
-}
-
 export default function PopupActivated() {
     const {settings} = useSettings();
     const [activated, setActivated] = useState<boolean>(!!settings?.data?.activated);
+    const [disabledButton, setDisabledButton] = useState<boolean>(false);
 
     const togglePopup = async (value: boolean) => {
+        if (activated === value) {
+            return;
+        }
+
         setActivated(value);
+        setDisabledButton(true);
 
         await apiFetch(`/setting/set`, {
             method: 'PUT',
@@ -24,6 +24,8 @@ export default function PopupActivated() {
                 value: value,
             },
         });
+
+        setDisabledButton(false);
     };
 
     return (
@@ -34,12 +36,14 @@ export default function PopupActivated() {
                     <Button
                         onClick={() => togglePopup(true)}
                         variant={activated ? 'primary' : 'secondary'}
+                        disabled={disabledButton}
                     >
                         True
                     </Button>
                     <Button
                         onClick={() => togglePopup(false)}
                         variant={!activated ? 'primary' : 'secondary'}
+                        disabled={disabledButton}
                     >
                         False
                     </Button>
