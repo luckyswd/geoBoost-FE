@@ -3,17 +3,15 @@
 namespace App\Controller;
 
 use App\Enum\SettingKey;
+use App\Handler\Setting\ActivatedHandler;
 use App\Repository\ShopRepository;
 use App\Services\Setting\SettingService;
-use App\Services\Shopify\RESTAdminAPI\OnlineStore\ScriptTagService;
 use App\Services\ShopLogger;
 use App\Traits\ApiResponseTrait;
-use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 
 #[Route('/api/v1/setting')]
@@ -34,15 +32,29 @@ class SettingController extends AbstractController
             return $this->error('Invalid key provided', Response::HTTP_BAD_REQUEST);
         }
 
+        ShopLogger::create($domain)->info("Получение настроек для домена: $domain");
+
         $shop = $shopRepository->findOneBy(['domain' => $domain]);
 
-        if ($key === 'all') {
-            return $this->success($settingService->getAllSetting(shop: $shop));
+        if (!$shop) {
+            ShopLogger::create($domain)->info("\nВ БД не был найден shop с таким доменом: $domain");
+
+            return $this->error('domain not found', Response::HTTP_NOT_FOUND);
         }
 
-        return $this->success([
-            'value' => $settingService->getValueByKey($shop, $key)
-        ]);
+        try {
+            if ($key === 'all') {
+                return $this->success($settingService->getAllSetting(shop: $shop));
+            }
+
+            return $this->success([
+                'value' => $settingService->getValueByKey($shop, $key)
+            ]);
+        } catch (\Throwable $e) {
+            ShopLogger::create($domain)->info("\nОшибка при получении настроект для: $domain");
+
+            return $this->error($e->getMessage());
+        }
     }
 
     #[Route('/set', name: 'set_setting', methods: ["PUT"])]
@@ -59,56 +71,28 @@ class SettingController extends AbstractController
             return $this->error('Invalid key provided', Response::HTTP_BAD_REQUEST);
         }
 
+        ShopLogger::create($domain)->info("Установка настройки для домена: $domain key: $key value $value");
+
         $shop = $shopRepository->findOneBy(['domain' => $domain]);
-        $settingService->setSetting(shop: $shop, key: $key, value: $value);
 
-        return $this->success();
-    }
+        if (!$shop) {
+            ShopLogger::create($domain)->info("\nВ БД не был найден shop с таким доменом: $domain");
 
-    #[Route('/app-activated', name: 'app-activated',methods: ["POST"])]
-    public function activated(
-        ShopRepository $shopRepository,
-        Request $request,
-        SettingService $settingService,
-    ): JsonResponse {
-        $domain = $request->getPayload()->get('domain');
-
-        if (!$domain) {
-            throw new BadRequestHttpException("The 'domain' parameter is missing.");
+            return $this->error('domain not found', Response::HTTP_NOT_FOUND);
         }
 
-        ShopLogger::create($domain)->info("Начинаем активацию приложения для: " . $domain);
-
         try {
-            $shop = $shopRepository->findOneBy(['domain' => $domain]);
+            match ($key) {
+                SettingKey::ACTIVATED->value => (new ActivatedHandler())($shop, $value)
+            };
 
-            if (!$shop) {
-                ShopLogger::create($domain)->info("\nВ БД не был найден shop с таким доменом: " . $domain);
-
-                return $this->error('domain not found', Response::HTTP_NOT_FOUND);
-            }
-
-            $scriptTagService = new ScriptTagService($shop);
-            $scriptTagService->addCustomScriptTag('https://staging-truewealthadvisorygroup.kinsta.cloud/app/themes/twag/dist/scripts/popup.js');
-            $settingService->setSetting($shop, SettingKey::ACTIVATED->name, true);
-
-            ShopLogger::create($domain)->info("\nПриложение успешно активирвана для: " . $domain);
-
-            return $this->success(['message' => 'success']);
-        } catch (\Exception $e) {
-            ShopLogger::create($domain)->Error(sprintf("\nОшибка при активирвана приложения для: %s. Ошиюка: %s", $domain, $e->getMessage()));
+            $settingService->setSetting(shop: $shop, key: $key, value: $value);
+        } catch (\Throwable $e) {
+            ShopLogger::create($domain)->info("\nОшибка при установки настройки для домена $domain key: $key value $value");
 
             return $this->error($e->getMessage());
         }
-    }
 
-    #[Route('/app-deactivated', name: 'app-deactivated')]
-    public function deactivated(
-        LoggerInterface $shopLogger,
-        ShopRepository $shopRepository,
-        SettingService $settingService,
-    ): JsonResponse
-    {
-
+        return $this->success();
     }
 }
