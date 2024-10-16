@@ -18,10 +18,9 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
-#[Route('/shopify')]
 class ShopifyController extends AbstractController
 {
-    #[Route('/install', name: 'shopify_install', methods: ['GET'])]
+    #[Route('/', name: 'shopify_install', methods: ['GET'])]
     public function authorize(Request $request): RedirectResponse
     {
         $shop = $request->get('shop');
@@ -39,7 +38,7 @@ class ShopifyController extends AbstractController
         return new RedirectResponse($installUrl);
     }
 
-    #[Route('/callback', name: 'shopify_callback', methods: ['GET'])]
+    #[Route('/shopify/callback', name: 'shopify_callback', methods: ['GET'])]
     public function callback(
         Request $request,
         EntityManagerInterface $entityManager,
@@ -93,7 +92,7 @@ class ShopifyController extends AbstractController
         return new RedirectResponse(ShopifyService::getRedirectUrl($domain));
     }
 
-    #[Route('/webhook/uninstalled', name: 'shopify_uninstalled', methods: ['POST'])]
+    #[Route('/shopify/webhook/uninstalled', name: 'shopify_uninstalled', methods: ['POST'])]
     public function uninstalled(
         Request $request,
         ShopRepository $shopRepository,
