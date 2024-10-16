@@ -1,10 +1,10 @@
 import { BlockStack } from '@shopify/polaris';
-import PopupFunctionality from "./Settings/PopupFunctionality";
+import PopupActivated from "./Settings/PopupActivated";
 
 export default function Settings() {
     return (
         <BlockStack gap="500">
-            <PopupFunctionality/>
+            <PopupActivated/>
         </BlockStack>
     );
 }

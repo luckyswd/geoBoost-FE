@@ -25,7 +25,7 @@ class SettingService
         string $key,
         mixed $value
     ): void {
-        $setting = $this->getSetting($shop, $key);
+        $setting = $this->getSetting(shop: $shop, key: $key);
 
         if (!$setting) {
             $setting = (new Setting())
@@ -57,7 +57,7 @@ class SettingService
         Shop $shop,
         string $key,
     ): void {
-        $setting = $this->getSetting($shop, $key);
+        $setting = $this->getSetting(shop: $shop, key: $key);
 
         if (!$setting) {
             return;
@@ -78,5 +78,9 @@ class SettingService
 
             $this->entityManager->persist($setting);
         }
+    }
+
+    public function getAllSetting(Shop $shop): array {
+        return $this->settingRepository->getAllSettings(shop: $shop);
     }
 }

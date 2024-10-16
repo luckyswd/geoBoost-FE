@@ -13,12 +13,12 @@ trait ApiResponseTrait
     protected array $meta = [];
 
     protected function success(
-        array $data,
+        array $data = [],
         int $statusCode = Response::HTTP_OK
     ): JsonResponse {
         return new JsonResponse(
             [
-                'data' => $data,
+                'data' => empty($data) ? ['success'] : $data,
                 'meta' => $this->meta
             ],
             $statusCode,

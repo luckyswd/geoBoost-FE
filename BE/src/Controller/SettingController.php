@@ -16,10 +16,54 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 
-#[Route('/api/v1')]
+#[Route('/api/v1/setting')]
 class SettingController extends AbstractController
 {
     use ApiResponseTrait;
+
+    #[Route('/', name: 'get_setting', methods: ["GET"])]
+    public function getSetting(
+        ShopRepository $shopRepository,
+        SettingService $settingService,
+        Request $request,
+    ): JsonResponse {
+        $domain = $this->getDomain($request);
+        $key = $request->get('key');
+
+        if ($key !== 'all' && !SettingKey::tryFrom($key)) {
+            return $this->error('Invalid key provided', Response::HTTP_BAD_REQUEST);
+        }
+
+        $shop = $shopRepository->findOneBy(['domain' => $domain]);
+
+        if ($key === 'all') {
+            return $this->success($settingService->getAllSetting(shop: $shop));
+        }
+
+        return $this->success([
+            'value' => $settingService->getValueByKey($shop, $key)
+        ]);
+    }
+
+    #[Route('/set', name: 'set_setting', methods: ["PUT"])]
+    public function setSetting(
+        ShopRepository $shopRepository,
+        SettingService $settingService,
+        Request $request,
+    ): JsonResponse {
+        $domain = $this->getDomain($request);
+        $key = $request->getPayload()->get('key');
+        $value = $request->getPayload()->get('value');
+
+        if (!SettingKey::tryFrom($key)) {
+            return $this->error('Invalid key provided', Response::HTTP_BAD_REQUEST);
+        }
+
+        $shop = $shopRepository->findOneBy(['domain' => $domain]);
+        $settingService->setSetting(shop: $shop, key: $key, value: $value);
+
+        return $this->success();
+    }
 
     #[Route('/app-activated', name: 'app-activated',methods: ["POST"])]
     public function activated(
