@@ -4,6 +4,7 @@ namespace App\Handler\Setting;
 
 use App\Entity\Shop;
 use App\Services\Shopify\RESTAdminAPI\OnlineStore\ScriptTagService;
+use App\Services\ShopLogger;
 
 class ActivatedHandler
 {
@@ -11,8 +12,12 @@ class ActivatedHandler
         Shop $shop,
         bool $isActive,
     ): void {
+        $scriptTagService = new ScriptTagService($shop);
+
         if ($isActive) {
-            (new ScriptTagService($shop))->addCustomScriptTag('https://staging-truewealthadvisorygroup.kinsta.cloud/app/themes/twag/dist/scripts/popup.js');
+            $scriptTagService->addCustomScriptTag('https://staging-truewealthadvisorygroup.kinsta.cloud/app/themes/twag/dist/scripts/popup.js');
+        } else {
+//            $scriptTagService->deleteCustomScriptTag();
         }
     }
 }

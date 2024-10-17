@@ -13,14 +13,9 @@ use Monolog\Handler\StreamHandler;
  */
 class ShopLogger
 {
-    private static ?Logger $logger = null;
-
-    /**
-     * Создает и возвращает логгер для конкретного магазина.
-     */
-    public static function create(string $domain): Logger
+    private static function create(string $domain): Logger
     {
-        self::$logger = self::$logger ?? new Logger('shop');
+        $logger = new Logger('shop');
 
         $logFile = sprintf(
             '%s/%s/%s.log',
@@ -33,8 +28,37 @@ class ShopLogger
             mkdir(dirname($logFile), 0777, true);
         }
 
-        self::$logger->pushHandler(new StreamHandler($logFile, Level::Info));
+        $logger->pushHandler(new StreamHandler($logFile, Level::Info));
 
-        return self::$logger;
+        return $logger;
+    }
+
+    private static function getEndpointAndMethod(): string
+    {
+        $endpoint = $_SERVER['REQUEST_URI'] ?? 'unknown';
+        $method = $_SERVER['REQUEST_METHOD'] ?? 'unknown';
+
+        return sprintf(' endpoint: "%s" method: "%s"', $endpoint, $method);
+    }
+
+    public static function error(
+        string $domain,
+        string $message,
+    ): void {
+        self::create($domain)->error($message . self::getEndpointAndMethod());
+    }
+
+    public static function info(
+        string $domain,
+        string $message,
+    ): void {
+        self::create($domain)->info($message . self::getEndpointAndMethod());
+    }
+
+    public static function critical(
+        string $domain,
+        string $message,
+    ): void {
+        self::create($domain)->critical($message . self::getEndpointAndMethod());
     }
 }

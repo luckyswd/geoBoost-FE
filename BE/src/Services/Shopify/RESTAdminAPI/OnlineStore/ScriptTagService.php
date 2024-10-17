@@ -24,12 +24,12 @@ class ScriptTagService extends BaseAdminAPI
         string $scriptUrl,
         string $displayScope = 'all'
     ): ?array {
-        ShopLogger::create($this->shop->getDomain())->info("Попытка добавить скрипт с URL: $scriptUrl.");
+        ShopLogger::info($this->shop->getDomain(), "Попытка добавить скрипт с URL: $scriptUrl.");
 
         $existingScript = $this->checkIfScriptExists($scriptUrl);
 
         if ($existingScript) {
-            ShopLogger::create($this->shop->getDomain())->info("\nСкрипт с URL $scriptUrl уже существует. Пропускаем добавление.");
+            ShopLogger::info($this->shop->getDomain(), "\nСкрипт с URL $scriptUrl уже существует. Пропускаем добавление.");
 
             return $existingScript;
         }
@@ -43,14 +43,14 @@ class ScriptTagService extends BaseAdminAPI
         ];
 
         try {
-            ShopLogger::create($this->shop->getDomain())->info("\nОтправка запроса на добавление скрипта в Shopify API...");
+            ShopLogger::info($this->shop->getDomain(), "\nОтправка запроса на добавление скрипта в Shopify API...");
             $response = $this->httpClient->post('/admin/api/' . $this->apiVersion . '/script_tags.json', $body);
 
-            ShopLogger::create($this->shop->getDomain())->info("\nСкрипт успешно добавлен.");
+            ShopLogger::info($this->shop->getDomain(), "\nСкрипт успешно добавлен.");
 
             return json_decode($response->getBody()->getContents(), true);
         } catch (RequestException $e) {
-            ShopLogger::create($this->shop->getDomain())->error("\nНе удалось добавить скрипт: " . $e->getMessage());
+            ShopLogger::error($this->shop->getDomain(), "\nНе удалось добавить скрипт: " . $e->getMessage());
 
             return null;
         }
@@ -65,15 +65,15 @@ class ScriptTagService extends BaseAdminAPI
      */
     public function deleteCustomScriptTag(int $scriptTagId): bool
     {
-        ShopLogger::create($this->shop->getDomain())->info("Попытка удалить скрипт с ID: $scriptTagId.");
+        ShopLogger::info($this->shop->getDomain(), "Попытка удалить скрипт с ID: $scriptTagId.");
 
         try {
             $this->httpClient->delete('/admin/api/' . $this->apiVersion . '/script_tags/' . $scriptTagId . '.json');
-            ShopLogger::create($this->shop->getDomain())->info("\nСкрипт с ID: $scriptTagId успешно удалён.");
+            ShopLogger::info("\nСкрипт с ID: $scriptTagId успешно удалён.");
 
             return true;
         } catch (RequestException $e) {
-            ShopLogger::create($this->shop->getDomain())->error("\nНе удалось удалить скрипт с ID: $scriptTagId: " . $e->getMessage());
+            ShopLogger::error($this->shop->getDomain(), "\nНе удалось удалить скрипт с ID: $scriptTagId: " . $e->getMessage());
 
             return false;
         }
@@ -87,16 +87,16 @@ class ScriptTagService extends BaseAdminAPI
      */
     public function getAllScriptTags(): ?array
     {
-        ShopLogger::create($this->shop->getDomain())->info("Получение всех скриптов из Shopify API...");
+        ShopLogger::info($this->shop->getDomain(), "Получение всех скриптов из Shopify API...");
 
         try {
             $response = $this->httpClient->get('/admin/api/' . $this->apiVersion . '/script_tags.json');
-            ShopLogger::create($this->shop->getDomain())->info("\nСписок скриптов успешно получен.");
+            ShopLogger::info($this->shop->getDomain(), "\nСписок скриптов успешно получен.");
             $data = json_decode($response->getBody()->getContents(), true);
 
             return $data['script_tags'] ?? null;
         } catch (RequestException $e) {
-            ShopLogger::create($this->shop->getDomain())->error("\nНе удалось получить список скриптов: " . $e->getMessage());
+            ShopLogger::error($this->shop->getDomain(), "\nНе удалось получить список скриптов: " . $e->getMessage());
 
             return null;
         }
@@ -111,20 +111,21 @@ class ScriptTagService extends BaseAdminAPI
      */
     private function checkIfScriptExists(string $scriptUrl): ?array
     {
-        ShopLogger::create($this->shop->getDomain())->info("Проверка существования скрипта с URL: $scriptUrl...");
+        ShopLogger::info($this->shop->getDomain(), "Проверка существования скрипта с URL: $scriptUrl...");
 
         $scriptTags = $this->getAllScriptTags();
 
         if ($scriptTags) {
             foreach ($scriptTags as $scriptTag) {
                 if ($scriptTag['src'] === $scriptUrl) {
-                    ShopLogger::create($this->shop->getDomain())->info("\nСкрипт с URL: $scriptUrl найден.");
+                    ShopLogger::info($this->shop->getDomain(), "\nСкрипт с URL: $scriptUrl найден.");
+
                     return $scriptTag;
                 }
             }
         }
 
-        ShopLogger::create($this->shop->getDomain())->info("\nСкрипт с URL: $scriptUrl не найден.");
+        ShopLogger::info($this->shop->getDomain(), "\nСкрипт с URL: $scriptUrl не найден.");
 
         return null;
     }

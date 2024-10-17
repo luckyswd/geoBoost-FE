@@ -71,7 +71,7 @@ class ShopifyController extends AbstractController
         $response = ShopifyApiService::client($shop)->get('shop.json')->getDecodedBody();
 
         if (isset($response['errors'])) {
-            ShopLogger::create($domain)->info($response['errors']);
+            ShopLogger::error($domain, $response['errors']);
 
             throw new Exception($response['errors']);
         }

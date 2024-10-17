@@ -21,12 +21,13 @@ class ThemeService extends BaseAdminAPI
     public function getThemes(): array|null
     {
         try {
-            ShopLogger::create($this->shop->getDomain())->info("Запрос списка тем для магазина: " . $this->shop->getDomain());
+            ShopLogger::info($this->shop->getDomain(), "Запрос списка тем для магазина");
+
             $response = $this->httpClient->get('/admin/api/' . $this->apiVersion . '/themes.json');
 
             return json_decode($response->getBody()->getContents(), true)['themes'];
         } catch (\Exception $e) {
-            ShopLogger::create($this->shop->getDomain())->error("\n Ошибка при получении списка тем: " . $e->getMessage(), ['shop' => $this->shop->getDomain()]);
+            ShopLogger::error($this->shop->getDomain(), "\n Ошибка при получении списка тем: " . $e->getMessage());
 
             return null;
         }
@@ -46,16 +47,17 @@ class ThemeService extends BaseAdminAPI
             return null;
         }
 
-        ShopLogger::create($this->shop->getDomain())->info("Обработка поиска активной темы: " . $this->shop->getDomain());
+        ShopLogger::info($this->shop->getDomain(), "Обработка поиска активной темы");
+
         foreach ($themes as $theme) {
             if ($theme['role'] == 'main') {
-                ShopLogger::create($this->shop->getDomain())->info("\nНайдена активная тема: " . $theme['name'], ['shop' => $this->shop->getDomain()]);
+                ShopLogger::info("\nНайдена активная тема: " . $theme['name']);
 
                 return $theme;
             }
         }
 
-        ShopLogger::create($this->shop->getDomain())->info("\nАктивная тема не найдена: " . $this->shop->getDomain());
+        ShopLogger::info($this->shop->getDomain(), "\nАктивная тема не найдена");
 
         return null;
     }

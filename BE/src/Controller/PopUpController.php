@@ -26,30 +26,31 @@ class PopUpController extends AbstractController
     ): JsonResponse {
         $domain = $request->get('domain', 'max-geoboost.myshopify.com');
         $clientIp = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'];
-        ShopLogger::create($domain)->info('Начало обработки получения продуктов для домена: ' . $domain);
+        ShopLogger::info($domain, "Начало обработки получения продуктов");
 
         if (!$domain) {
-            ShopLogger::create($domain)->error("Домен не найден");
+            ShopLogger::error($domain, "Домен не найден");
 
             return $this->error('Domain not found', Response::HTTP_NOT_FOUND);
         }
 
         if (!$clientIp) {
-            Shoplogger::create($domain)->error("IP-адрес клиента не найден");
+            ShopLogger::error($domain, "IP-адрес клиента не найден");
 
             return $this->error('Client IP not found', Response::HTTP_NOT_FOUND);
         }
 
         $shop = $shopRepository->findOneBy(['domain' => $domain]);
+
         if (!$shop) {
-            Shoplogger::create($domain)->error("Магазин не найден");
+            ShopLogger::error($domain, "Магазин не найден");
 
             return $this->error('Shop not found', Response::HTTP_NOT_FOUND);
         }
 
         $geoData = $geoLocationService->getLocationByIp($clientIp);
         if (!$geoData) {
-            Shoplogger::create($domain)->error("Геоданные не найдены");
+            ShopLogger::error($domain, "Геоданные не найдены");
 
             return $this->error('Geo data not found', Response::HTTP_NOT_FOUND);
         }
@@ -61,7 +62,7 @@ class PopUpController extends AbstractController
             $upcomingHolidays = $holidayRepository->findUpcomingHolidaysForCountry($geoData['countryName'], $endDate);
 
         } catch (\Exception $e) {
-            Shoplogger::creat($domain)->error("Предстоящие праздники не найдены", ['exception' => $e]);
+            ShopLogger::error($domain, "Предстоящие праздники не найдены. message: " . $e->getMessage());
 
             return $this->error('No upcoming holidays found', Response::HTTP_NOT_FOUND);
         }

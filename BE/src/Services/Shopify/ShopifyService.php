@@ -23,7 +23,7 @@ class ShopifyService
         array $query
     ): void {
         if (!$domain || !$code || !$hmac) {
-            ShopLogger::create($domain)->info("Missing parameters. domain: $domain code: $code hmac: $hmac");
+            ShopLogger::info($domain ?? 'empty_domain', "Missing parameters. domain: $domain code: $code hmac: $hmac");
 
             throw new \Exception('Missing parameters.');
         }
@@ -34,7 +34,7 @@ class ShopifyService
         $computedHmac = hash_hmac('sha256', http_build_query($query), getenv('SHOPIFY_SECRET_KEY'));
 
         if (!hash_equals($hmac, $computedHmac)) {
-            ShopLogger::create($domain)->info("Invalid HMAC validation.");
+            ShopLogger::info($domain, "Invalid HMAC validation.");
 
             throw new \Exception('Invalid HMAC validation.');
         }
@@ -61,7 +61,7 @@ class ShopifyService
         ]);
 
         if ($response->getStatusCode() !== 201) {
-            #TODO add logs
+            ShopLogger::error($domain, "register webhook fail");
         }
     }
 
@@ -94,7 +94,7 @@ class ShopifyService
         $accessToken = $responseData['access_token'] ?? null;
 
         if (!$accessToken) {
-            ShopLogger::create($domain)->info("Missing access_token");
+            ShopLogger::info($domain, "Missing access_token");
 
             throw new \Exception('Missing access_token');
         }

@@ -32,12 +32,10 @@ class SettingController extends AbstractController
             return $this->error('Invalid key provided', Response::HTTP_BAD_REQUEST);
         }
 
-        ShopLogger::create($domain)->info("Получение настроек для домена: $domain");
-
         $shop = $shopRepository->findOneBy(['domain' => $domain]);
 
         if (!$shop) {
-            ShopLogger::create($domain)->info("\nВ БД не был найден shop с таким доменом: $domain");
+            ShopLogger::error($domain, "В БД не был найден shop");
 
             return $this->error('domain not found', Response::HTTP_NOT_FOUND);
         }
@@ -51,7 +49,7 @@ class SettingController extends AbstractController
                 'value' => $settingService->getValueByKey($shop, $key)
             ]);
         } catch (\Throwable $e) {
-            ShopLogger::create($domain)->info("\nОшибка при получении настроект для: $domain");
+            ShopLogger::error($domain, "\nОшибка при получении настроект");
 
             return $this->error($e->getMessage());
         }
@@ -71,12 +69,10 @@ class SettingController extends AbstractController
             return $this->error('Invalid key provided', Response::HTTP_BAD_REQUEST);
         }
 
-        ShopLogger::create($domain)->info("Установка настройки для домена: $domain key: $key value $value");
-
         $shop = $shopRepository->findOneBy(['domain' => $domain]);
 
         if (!$shop) {
-            ShopLogger::create($domain)->info("\nВ БД не был найден shop с таким доменом: $domain");
+            ShopLogger::error($domain, "В БД не был найден shop");
 
             return $this->error('domain not found', Response::HTTP_NOT_FOUND);
         }
@@ -88,7 +84,7 @@ class SettingController extends AbstractController
 
             $settingService->setSetting(shop: $shop, key: $key, value: $value);
         } catch (\Throwable $e) {
-            ShopLogger::create($domain)->info("\nОшибка при установки настройки для домена $domain key: $key value $value");
+            ShopLogger::error($domain, "\nОшибка при установки настройки key: $key value $value");
 
             return $this->error($e->getMessage());
         }
