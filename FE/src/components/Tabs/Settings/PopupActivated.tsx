@@ -25,6 +25,24 @@ export default function PopupActivated() {
             },
         });
 
+        try {
+            await apiFetch(`/setting/set`, {
+                method: 'PUT',
+                data: {
+                    key: ACTIVATED,
+                    value: value,
+                },
+            });
+
+            shopify.toast.show(`Popup ${value ? 'enabled' : 'disabled'} successfully`);
+        } catch (error) {
+            shopify.toast.show('Failed to update setting. Please contact support!', {
+                isError: true
+            });
+        } finally {
+            setDisabledButton(false);
+        }
+
         setDisabledButton(false);
     };
 

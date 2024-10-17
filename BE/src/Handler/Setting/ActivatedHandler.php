@@ -4,20 +4,19 @@ namespace App\Handler\Setting;
 
 use App\Entity\Shop;
 use App\Services\Shopify\RESTAdminAPI\OnlineStore\ScriptTagService;
-use App\Services\ShopLogger;
 
 class ActivatedHandler
 {
     public function __invoke(
         Shop $shop,
-        bool $isActive,
+        bool $isAdd,
     ): void {
         $scriptTagService = new ScriptTagService($shop);
 
-        if ($isActive) {
-            $scriptTagService->addCustomScriptTag('https://staging-truewealthadvisorygroup.kinsta.cloud/app/themes/twag/dist/scripts/popup.js');
+        if ($isAdd) {
+            $scriptTagService->addCustomScriptTag(getenv('CANONICAL_HOST') . '/popup.js');
         } else {
-//            $scriptTagService->deleteCustomScriptTag();
+            $scriptTagService->deleteCustomScriptTag(getenv('CANONICAL_HOST') . '/popup.js');
         }
     }
 }

@@ -23,7 +23,7 @@ class ThemeService extends BaseAdminAPI
         try {
             ShopLogger::info($this->shop->getDomain(), "Запрос списка тем для магазина");
 
-            $response = $this->httpClient->get('/admin/api/' . $this->apiVersion . '/themes.json');
+            $response = $this->shopifyClient->get('/admin/api/' . $this->apiVersion . '/themes.json');
 
             return json_decode($response->getBody()->getContents(), true)['themes'];
         } catch (\Exception $e) {

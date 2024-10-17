@@ -10,7 +10,7 @@ abstract class BaseAdminAPI
 {
     protected readonly string $shopifyApiUrl;
     protected readonly string $accessToken;
-    protected readonly Rest $httpClient;
+    protected readonly Rest $shopifyClient;
     protected readonly Shop $shop;
     protected readonly string $apiVersion;
 
@@ -18,7 +18,7 @@ abstract class BaseAdminAPI
         Shop $shop,
     ) {
         $this->shopifyApiUrl = 'https://' . $shop->getDomain();
-        $this->httpClient = ShopifyApiService::client($shop);
+        $this->shopifyClient = ShopifyApiService::client($shop);
         $this->apiVersion = getenv('SHOPIFY_API_VERSION');
         $this->shop = $shop;
     }

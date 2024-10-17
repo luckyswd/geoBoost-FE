@@ -37,7 +37,7 @@ class AssetService extends BaseAdminAPI
 //        try {
         ShopLogger::info($this->shop->getDomain(), "\nОтправка запроса на добавление CSS в Shopify API...");
 
-        $response = $this->httpClient->put(sprintf('/admin/api/%s/themes/%s/assets.json', $this->apiVersion, $this->activeTheme['id']), $body);
+        $response = $this->shopifyClient->put(sprintf('/admin/api/%s/themes/%s/assets.json', $this->apiVersion, $this->activeTheme['id']), $body);
 
         ShopLogger::info($this->shop->getDomain(), "\nCSS успешно добавлен в тему.");
 
@@ -63,7 +63,7 @@ class AssetService extends BaseAdminAPI
     public function getList(): ?array
     {
         try {
-            $response = $this->httpClient->get(sprintf('/admin/api/%s/themes/%s/assets.json', $this->apiVersion, $this->activeTheme['id']));
+            $response = $this->shopifyClient->get(sprintf('/admin/api/%s/themes/%s/assets.json', $this->apiVersion, $this->activeTheme['id']));
 
             return json_decode($response->getBody()->getContents(), true);
         } catch (RequestException $e) {
