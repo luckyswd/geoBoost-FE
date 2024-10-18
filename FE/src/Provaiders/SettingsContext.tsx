@@ -6,10 +6,12 @@ import {Settings} from "../components/Tabs/type/SettingType";
 const SettingsContext = createContext<{
     settings: ApiV1Response<Settings> | undefined;
     setSettings: (settings: ApiV1Response<Settings>) => void;
+    isLoading: boolean
 } | undefined>(undefined);
 
 export const SettingsProvider = ({children}: { children: React.ReactNode }) => {
     const [settings, setSettings] = useState<ApiV1Response<Settings>>();
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         apiFetch<ApiV1Response<Settings>>('/setting/?key=all')
@@ -18,11 +20,14 @@ export const SettingsProvider = ({children}: { children: React.ReactNode }) => {
             })
             .catch(() => {
                 setSettings({errors: "Failed to fetch settings"});
+            })
+            .finally(() => {
+                setIsLoading(false);
             });
     }, []);
 
     return (
-        <SettingsContext.Provider value={{settings, setSettings}}>
+        <SettingsContext.Provider value={{settings, setSettings, isLoading}}>
             {children}
         </SettingsContext.Provider>
     );

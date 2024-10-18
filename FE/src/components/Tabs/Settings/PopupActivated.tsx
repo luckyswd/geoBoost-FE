@@ -1,9 +1,9 @@
 import {ButtonGroup, Button, Text, BlockStack, Card} from '@shopify/polaris';
 import {useState} from 'react';
 import {apiFetch} from "../../../api";
-import {useSettings} from "../../../Provaiders/SettingsContext";
 import {ACTIVATED} from "../type/SettingType";
 import {ERROR_MESSAGE} from "../../../type/global";
+import {useSettings} from "../../../Provaiders/SettingsContext";
 
 export default function PopupActivated() {
     const {settings} = useSettings();
@@ -17,14 +17,6 @@ export default function PopupActivated() {
 
         setActivated(value);
         setDisabledButton(true);
-
-        await apiFetch(`/setting/set`, {
-            method: 'PUT',
-            data: {
-                key: ACTIVATED,
-                value: value,
-            },
-        });
 
         try {
             await apiFetch(`/setting/set`, {
