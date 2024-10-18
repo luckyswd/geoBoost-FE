@@ -2,7 +2,8 @@ import {ButtonGroup, Button, Text, BlockStack, Card} from '@shopify/polaris';
 import {useState} from 'react';
 import {apiFetch} from "../../../api";
 import {useSettings} from "../../../Provaiders/SettingsContext";
-import {ACTIVATED} from "./type";
+import {ACTIVATED} from "../type/SettingType";
+import {ERROR_MESSAGE} from "../../../type/global";
 
 export default function PopupActivated() {
     const {settings} = useSettings();
@@ -36,7 +37,7 @@ export default function PopupActivated() {
 
             shopify.toast.show(`Popup ${value ? 'enabled' : 'disabled'} successfully`);
         } catch (error) {
-            shopify.toast.show('Failed to update setting. Please contact support!', {
+            shopify.toast.show(ERROR_MESSAGE, {
                 isError: true
             });
         } finally {

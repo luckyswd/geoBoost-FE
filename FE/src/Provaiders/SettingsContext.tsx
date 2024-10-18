@@ -1,7 +1,7 @@
 import {createContext, useContext, useState, useEffect} from "react";
 import {ApiV1Response} from "../type/global";
 import {apiFetch} from "../api";
-import {Settings} from "../components/Tabs/Settings/type";
+import {Settings} from "../components/Tabs/type/SettingType";
 
 const SettingsContext = createContext<{
     settings: ApiV1Response<Settings> | undefined;
