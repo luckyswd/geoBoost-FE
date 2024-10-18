@@ -9,7 +9,7 @@ import {
     BlockStack,
     Pagination,
     InlineStack,
-    SkeletonBodyText,
+    SkeletonBodyText, Text,
 } from '@shopify/polaris';
 import {ApiV1Response, ERROR_MESSAGE} from "../../type/global";
 import {apiFetch} from "../../api";
@@ -135,6 +135,13 @@ export function Holidays() {
 
     return (
         <BlockStack gap="200">
+            <Card>
+                <Text variant="headingMd" as="h3" alignment="center">
+                    Here you can explore all the holidays celebrated in our system, as well as the tags associated with them.<br/>
+                    The user-friendly interface allows you to easily manage tags by adding new ones or deleting existing ones
+                </Text>
+            </Card>
+
             <Card>
                 <TextField
                     label=""
