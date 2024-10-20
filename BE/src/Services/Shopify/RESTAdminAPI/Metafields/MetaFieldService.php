@@ -2,7 +2,8 @@
 
 namespace App\Services\Shopify\RESTAdminAPI\Metafields;
 
-use App\Services\Shopify\RESTAdminAPI\BaseAdminAPI;
+use App\Entity\Shop;
+use App\Services\Shopify\ShopifyApiService;
 use App\Services\ShopLogger;
 use GuzzleHttp\Exception\RequestException;
 use Psr\Http\Client\ClientExceptionInterface;
@@ -12,7 +13,7 @@ use Shopify\Exception\UninitializedContextException;
  * Документация Shopify API
  * @see https://shopify.dev/docs/api/admin-rest/2024-07/resources/metafield
  */
-class MetaFieldService extends BaseAdminAPI
+class MetaFieldService
 {
     /**
      * Встраивает метаполе (MetaFields) на указанный продукт в Shopify через Metafield API.
@@ -28,13 +29,16 @@ class MetaFieldService extends BaseAdminAPI
      * @throws UninitializedContextException
      */
     public function createMetaFieldForProduct(
-        int $productId,
+        Shop   $shop,
+        int    $productId,
         string $namespace,
         string $key,
-        array $value,
+        array  $value,
         string $type = 'json_string'
-    ): void {
-        ShopLogger::info($this->shop->getDomain(), "Попытка добавить MetaField для продукта $productId.");
+    ): void
+    {
+        ShopLogger::info($shop->getDomain(), "Попытка добавить MetaField для продукта $productId.");
+        $shopifyApiService = ShopifyApiService::client($shop);
 
         $body = [
             'metafield' => [
@@ -46,17 +50,16 @@ class MetaFieldService extends BaseAdminAPI
         ];
 
         try {
-            ShopLogger::info($this->shop->getDomain(), "Отправка запроса на добавление Metafield с value '" . json_encode($value) . "' для продукта $productId в Shopify API");
-            $response = $this->shopifyClient->post("/admin/api/{$this->apiVersion}/products/{$productId}/metafields.json", $body);
-
+            ShopLogger::info($shop->getDomain(), "Отправка запроса на добавление Metafield с value '" . json_encode($value) . "' для продукта $productId в Shopify API");
+            $response = $shopifyApiService->post("/products/{$productId}/metafields.json", $body);
             if ($response->getStatusCode() === 201) {
                 $data = json_decode($response->getBody()->getContents(), true);
-                ShopLogger::info($this->shop->getDomain(), "Metafield успешно добавлен для продукта $productId с value '" . json_encode($value) . "'. Ответ: " . json_encode($data));
+                ShopLogger::info($shop->getDomain(), "Metafield успешно добавлен для продукта $productId с value '" . json_encode($value) . "'. Ответ: " . json_encode($data));
             } else {
-                ShopLogger::error($this->shop->getDomain(), "Ошибка при добавлении Metafield для продукта $productId: HTTP " . $response->getStatusCode());
+                ShopLogger::error($shop->getDomain(), "Ошибка при добавлении Metafield для продукта $productId: HTTP " . $response->getStatusCode());
             }
         } catch (RequestException $e) {
-            ShopLogger::error($this->shop->getDomain(), "Не удалось добавить Metafield: " . $e->getMessage());
+            ShopLogger::error($shop->getDomain(), "Не удалось добавить Metafield: " . $e->getMessage());
         }
     }
 
@@ -69,23 +72,30 @@ class MetaFieldService extends BaseAdminAPI
      * @throws ClientExceptionInterface
      * @throws UninitializedContextException
      */
-    public function getAllMetaFieldsByProductId(int $productId): array
+    public function getAllMetaFieldsByProductId(
+        Shop $shop,
+        int  $productId,
+    ): array
     {
-        ShopLogger::info($this->shop->getDomain(), "Попытка получить все MetaFields для продукта $productId.");
+        ShopLogger::info($shop->getDomain(), "Попытка получить все MetaFields для продукта $productId.");
+        $shopifyApiService = ShopifyApiService::client($shop);
 
         try {
-            $response = $this->shopifyClient->get("/admin/api/{$this->apiVersion}/products/{$productId}/metafields.json");
+            $response = $shopifyApiService->get("/products/{$productId}/metafields.json");
 
             if ($response->getStatusCode() === 200) {
                 $data = json_decode($response->getBody()->getContents(), true);
-                ShopLogger::info($this->shop->getDomain(), "MetaFields успешно получены для продукта $productId.");
+                ShopLogger::info($shop->getDomain(), "MetaFields успешно получены для продукта $productId.");
+
                 return $data['metafields'];
             } else {
-                ShopLogger::error($this->shop->getDomain(), "Ошибка при получении MetaFields для продукта $productId: HTTP " . $response->getStatusCode());
+                ShopLogger::error($shop->getDomain(), "Ошибка при получении MetaFields для продукта $productId: HTTP " . $response->getStatusCode());
+
                 return [];
             }
         } catch (RequestException $e) {
-            ShopLogger::error($this->shop->getDomain(), "Не удалось получить MetaFields для продукта $productId: " . $e->getMessage());
+            ShopLogger::error($shop->getDomain(), "Не удалось получить MetaFields для продукта $productId: " . $e->getMessage());
+
             return [];
         }
     }
@@ -102,16 +112,21 @@ class MetaFieldService extends BaseAdminAPI
      * @throws ClientExceptionInterface
      * @throws UninitializedContextException
      */
-    public function deleteMetaFieldByKey(int $productId, string $namespace, string $key): void
+    public function deleteMetaFieldByKey(
+        Shop   $shop,
+        int    $productId,
+        string $namespace,
+        string $key
+    ): void
     {
-        ShopLogger::info($this->shop->getDomain(), "Попытка удалить MetaField с namespace '$namespace' и key '$key' для продукта $productId.");
+        ShopLogger::info($shop->getDomain(), "Попытка удалить MetaField с namespace '$namespace' и key '$key' для продукта $productId.");
 
-        $metaFieldId = $this->getMetaFieldIdByNamespaceAndKey($productId, $namespace, $key);
+        $metaFieldId = $this->getMetaFieldIdByNamespaceAndKey($shop, $productId, $namespace, $key);
 
         if ($metaFieldId !== null) {
-            $this->deleteMetaFieldById($productId, $metaFieldId);
+            $this->deleteMetaFieldById($shop, $productId, $metaFieldId);
         } else {
-            ShopLogger::error($this->shop->getDomain(), "MetaField с namespace '$namespace' и key '$key' не найден для удаления.");
+            ShopLogger::error($shop->getDomain(), "MetaField с namespace '$namespace' и key '$key' не найден для удаления.");
         }
     }
 
@@ -126,21 +141,25 @@ class MetaFieldService extends BaseAdminAPI
      * @throws ClientExceptionInterface
      * @throws UninitializedContextException
      */
-    private function getMetaFieldIdByNamespaceAndKey(int $productId, string $namespace, string $key): ?int
+    private function getMetaFieldIdByNamespaceAndKey(
+        Shop   $shop,
+        int    $productId,
+        string $namespace,
+        string $key
+    ): ?int
     {
-        ShopLogger::info($this->shop->getDomain(), "Попытка получить MetaField ID для продукта $productId с namespace '$namespace' и key '$key'.");
-
-        $metaFieldId = $this->getAllMetaFieldsByProductId($productId);
+        ShopLogger::info($shop->getDomain(), "Попытка получить MetaField ID для продукта $productId с namespace '$namespace' и key '$key'.");
+        $metaFieldId = $this->getAllMetaFieldsByProductId($shop, $productId);
 
         foreach ($metaFieldId as $metaField) {
             if ($metaField['namespace'] === $namespace && $metaField['key'] === $key) {
-                ShopLogger::info($this->shop->getDomain(), "MetaField найден: ID " . $metaField['id'] . " для продукта $productId.");
+                ShopLogger::info($shop->getDomain(), "MetaField найден: ID " . $metaField['id'] . " для продукта $productId.");
 
                 return $metaField['id'];
             }
         }
 
-        ShopLogger::info($this->shop->getDomain(), "MetaField с namespace '$namespace' и key '$key' не найден для продукта $productId.");
+        ShopLogger::info($shop->getDomain(), "MetaField с namespace '$namespace' и key '$key' не найден для продукта $productId.");
 
         return null;
     }
@@ -156,24 +175,25 @@ class MetaFieldService extends BaseAdminAPI
      * @throws UninitializedContextException
      */
     public function getMetaFieldByKey(
-        int $productId,
+        Shop   $shop,
+        int    $productId,
         string $namespace,
         string $key
     ): ?array
     {
-        ShopLogger::info($this->shop->getDomain(), "Попытка получить MetaField для продукта $productId с namespace '$namespace' и key '$key'.");
+        ShopLogger::info($shop->getDomain(), "Попытка получить MetaField для продукта $productId с namespace '$namespace' и key '$key'.");
 
-        $metaFields = $this->getAllMetaFieldsByProductId($productId);
+        $metaFields = $this->getAllMetaFieldsByProductId($shop, $productId);
 
         foreach ($metaFields as $metaField) {
             if ($metaField['namespace'] === $namespace && $metaField['key'] === $key) {
-                ShopLogger::info($this->shop->getDomain(), "MetaField найден: ID " . $metaField['id'] . " для продукта $productId.");
+                ShopLogger::info($shop->getDomain(), "MetaField найден: ID " . $metaField['id'] . " для продукта $productId.");
 
                 return $metaField;
             }
         }
 
-        ShopLogger::info($this->shop->getDomain(), "MetaField с namespace '$namespace' и key '$key' не найден для продукта $productId.");
+        ShopLogger::info($shop->getDomain(), "MetaField с namespace '$namespace' и key '$key' не найден для продукта $productId.");
 
         return null;
     }
@@ -187,20 +207,25 @@ class MetaFieldService extends BaseAdminAPI
      * @throws ClientExceptionInterface
      * @throws UninitializedContextException
      */
-    private function deleteMetaFieldById(int $productId, int $metaFieldId): void
+    private function deleteMetaFieldById(
+        Shop $shop,
+        int  $productId,
+        int  $metaFieldId
+    ): void
     {
-        ShopLogger::info($this->shop->getDomain(), "Попытка удалить MetaField с ID $metaFieldId для продукта $productId.");
+        ShopLogger::info($shop->getDomain(), "Попытка удалить MetaField с ID $metaFieldId для продукта $productId.");
+        $shopifyApiService = ShopifyApiService::client($shop);
 
         try {
-            $response = $this->shopifyClient->delete("/admin/api/{$this->apiVersion}/products/{$productId}/metafields/{$metaFieldId}.json");
+            $response = $shopifyApiService->delete("/products/{$productId}/metafields/{$metaFieldId}.json");
 
             if ($response->getStatusCode() === 200) {
-                ShopLogger::info($this->shop->getDomain(), "MetaField с ID $metaFieldId успешно удален для продукта $productId.");
+                ShopLogger::info($shop->getDomain(), "MetaField с ID $metaFieldId успешно удален для продукта $productId.");
             } else {
-                ShopLogger::error($this->shop->getDomain(), "Ошибка при удалении MetaField с ID $metaFieldId для продукта $productId: HTTP " . $response->getStatusCode());
+                ShopLogger::error($shop->getDomain(), "Ошибка при удалении MetaField с ID $metaFieldId для продукта $productId: HTTP " . $response->getStatusCode());
             }
         } catch (RequestException $e) {
-            ShopLogger::error($this->shop->getDomain(), "Не удалось удалить MetaField с ID $metaFieldId: " . $e->getMessage());
+            ShopLogger::error($shop->getDomain(), "Не удалось удалить MetaField с ID $metaFieldId: " . $e->getMessage());
         }
     }
 }

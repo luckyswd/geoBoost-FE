@@ -2,7 +2,9 @@
 
 namespace App\Services\Shopify\RESTAdminAPI\OnlineStore;
 
+use App\Entity\Shop;
 use App\Services\Shopify\RESTAdminAPI\BaseAdminAPI;
+use App\Services\Shopify\ShopifyApiService;
 use App\Services\ShopLogger;
 use Psr\Http\Client\ClientExceptionInterface;
 
@@ -10,7 +12,7 @@ use Psr\Http\Client\ClientExceptionInterface;
  * Документация Shopify API
  * @see https://shopify.dev/docs/api/admin-rest/2024-07/resources/theme
  */
-class ThemeService extends BaseAdminAPI
+class ThemeService
 {
     /**
      * Получает список всех тем магазина Shopify.
@@ -18,16 +20,16 @@ class ThemeService extends BaseAdminAPI
      * @return array|null Возвращает массив с данными о темах или null в случае ошибки
      * @throws ClientExceptionInterface
      */
-    public function getThemes(): array|null
+    public function getThemes(Shop $shop): array|null
     {
         try {
-            ShopLogger::info($this->shop->getDomain(), "Запрос списка тем для магазина");
-
-            $response = $this->shopifyClient->get('/admin/api/' . $this->apiVersion . '/themes.json');
+            ShopLogger::info($shop->getDomain(), "Запрос списка тем для магазина");
+            $shopifyApiService = ShopifyApiService::client($shop);
+            $response = $shopifyApiService->get('/themes.json');
 
             return json_decode($response->getBody()->getContents(), true)['themes'];
         } catch (\Exception $e) {
-            ShopLogger::error($this->shop->getDomain(), "\n Ошибка при получении списка тем: " . $e->getMessage());
+            ShopLogger::error($shop->getDomain(), "\n Ошибка при получении списка тем: " . $e->getMessage());
 
             return null;
         }
@@ -39,15 +41,15 @@ class ThemeService extends BaseAdminAPI
      * @return array|null Возвращает массив с данными об активной теме или null, если активная тема не найдена
      * @throws \Exception В случае возникновения ошибки при запросе к API Shopify
      */
-    public function getActiveTheme(): array|null
+    public function getActiveTheme(Shop $shop): array|null
     {
-        $themes = $this->getThemes();
+        $themes = $this->getThemes($shop);
 
         if (!$themes) {
             return null;
         }
 
-        ShopLogger::info($this->shop->getDomain(), "Обработка поиска активной темы");
+        ShopLogger::info($shop->getDomain(), "Обработка поиска активной темы");
 
         foreach ($themes as $theme) {
             if ($theme['role'] == 'main') {
@@ -57,7 +59,7 @@ class ThemeService extends BaseAdminAPI
             }
         }
 
-        ShopLogger::info($this->shop->getDomain(), "\nАктивная тема не найдена");
+        ShopLogger::info($shop->getDomain(), "\nАктивная тема не найдена");
 
         return null;
     }
