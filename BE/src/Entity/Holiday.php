@@ -186,4 +186,20 @@ class Holiday
             $this->tags->removeElement($tag);
         }
     }
+
+    public function toArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'country' => $this->country,
+            'year' => $this->year,
+            'timezone' => $this->timezone,
+            'type' => $this->type,
+            'translations' => $this->translations,
+            'holidayDate' => $this->holidayDate->format('Y-m-d'),
+            'createdAt' => $this->createdAt->format('Y-m-d H:i:s'),
+            'updatedAt' => $this->updatedAt->format('Y-m-d H:i:s'),
+        ];
+    }
 }
