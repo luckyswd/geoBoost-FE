@@ -30,7 +30,7 @@ abstract class BaseRepository extends ServiceEntityRepository
         $paginator = new Paginator($queryBuilder);
 
         return [
-            'data' => array_map(fn($entity) => $entity->toArray(), iterator_to_array($paginator->getIterator())),
+            'items' => array_map(fn($entity) => $entity->toArray(), iterator_to_array($paginator->getIterator())),
             'totalCount' => $paginator->count(),
             'page' => $page,
             'totalPages' => (int)ceil($paginator->count() / $limit),
