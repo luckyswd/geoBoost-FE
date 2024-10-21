@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Entity;
 
 use App\Repository\HolidayRepository;
@@ -47,6 +46,10 @@ class Holiday
 
     #[ORM\OneToMany(targetEntity: Tag::class, mappedBy: 'shop', cascade: ['persist', 'remove'], fetch: 'EAGER', orphanRemoval: true)]
     private Collection $tags;
+
+    #[ORM\OneToOne(targetEntity: DefaultTag::class, cascade: ['persist', 'remove'])]
+    #[ORM\JoinColumn(name: 'default_tag_id', referencedColumnName: 'id', nullable: true)]
+    private ?DefaultTag $defaultTag = null;
 
     public function __construct()
     {
@@ -182,8 +185,20 @@ class Holiday
 
     public function removeTag(Tag $tag): void
     {
-        if($this->tags->contains($tag)) {
+        if ($this->tags->contains($tag)) {
             $this->tags->removeElement($tag);
         }
+    }
+
+    public function getDefaultTag(): ?DefaultTag
+    {
+        return $this->defaultTag;
+    }
+
+    public function setDefaultTag(?DefaultTag $defaultTag): self
+    {
+        $this->defaultTag = $defaultTag;
+
+        return $this;
     }
 }
