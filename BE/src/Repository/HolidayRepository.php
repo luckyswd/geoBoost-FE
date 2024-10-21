@@ -2,10 +2,9 @@
 namespace App\Repository;
 
 use App\Entity\Holiday;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
-class HolidayRepository extends ServiceEntityRepository
+class HolidayRepository extends BaseRepository
 {
     public function __construct(ManagerRegistry $registry)
     {
@@ -35,4 +34,18 @@ class HolidayRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    /**
+     * @throws \Exception
+     */
+    public function searchHolidays(int $page, int $limit = 12, ?string $search = null): array
+    {
+        $builder = $this->createQueryBuilder('h');
+
+        if ($search) {
+            $builder->where($builder->expr()->like('LOWER(h.name)', ':search'))
+                ->setParameter('search', '%' . strtolower($search) . '%');
+        }
+
+        return $this->paginate($builder, $page, $limit);
+    }
 }
