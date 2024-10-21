@@ -1,7 +1,10 @@
 <?php
+
 namespace App\Command;
 
 use App\Entity\Holiday;
+use App\Entity\DefaultTag;
+use App\Enum\HolidayTags;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -12,8 +15,8 @@ use Yasumi\Yasumi;
 
 class ImportHolidaysCommand extends Command
 {
-    protected static string $defaultName = 'app:import-holidays';
-    protected static string $defaultDescription = 'Получить праздники для всех стран из библиотеки Yasumi и сохранить их в базу данных';
+    protected static $defaultName = 'app:import-holidays';
+    protected static $defaultDescription = 'Получить праздники для всех стран из библиотеки Yasumi и сохранить их в базу данных';
 
     private EntityManagerInterface $entityManager;
 
@@ -34,7 +37,7 @@ class ImportHolidaysCommand extends Command
         $startTime = microtime(true);
         $startDateTime = date('Y-m-d H:i:s');
         $io->section("Импорт праздников запущен: $startDateTime");
-        $year = (int) date('Y');
+        $year = (int)date('Y');
         $countries = Yasumi::getProviders();
 
         $progressBar = new ProgressBar($output, count($countries));
@@ -55,6 +58,9 @@ class ImportHolidaysCommand extends Command
                             ->setHolidayDate($holiday)
                             ->setCountry($country);
 
+                        // Обновляем DefaultTag для существующего праздника
+                        $this->updateDefaultTag($existingHoliday, $holiday->getName());
+
                         $this->entityManager->persist($existingHoliday);
                     } else {
                         $holidayEntity = new Holiday();
@@ -65,6 +71,9 @@ class ImportHolidaysCommand extends Command
                             ->setTimezone($holiday->getTimezone()->getName())
                             ->setHolidayDate($holiday)
                             ->setCountry($country);
+
+                        // Создаем DefaultTag для нового праздника
+                        $this->updateDefaultTag($holidayEntity, $holiday->getName());
 
                         $this->entityManager->persist($holidayEntity);
                     }
@@ -89,5 +98,25 @@ class ImportHolidaysCommand extends Command
         $io->success(sprintf("Общее время выполнения: %.2f секунд.", $executionTime));
 
         return Command::SUCCESS;
+    }
+
+    /**
+     * Создает или обновляет DefaultTag для праздника.
+     */
+    private function updateDefaultTag(Holiday $holidayEntity, string $holidayName): void
+    {
+        $tags = HolidayTags::getTagsByName($holidayName);
+        if (!$tags) {
+            return;
+        }
+
+        $defaultTag = $holidayEntity->getDefaultTag();
+        if ($defaultTag === null) {
+            $defaultTag = new DefaultTag();
+            $holidayEntity->setDefaultTag($defaultTag);
+        }
+
+        $defaultTag->setTags($tags);
+        $this->entityManager->persist($defaultTag);
     }
 }
