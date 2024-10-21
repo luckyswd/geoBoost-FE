@@ -12,15 +12,16 @@ function TabsComponent() {
     const tabs = [
         {id: 'dashboard', content: 'Dashboard'},
         {id: 'holidays', content: 'Holidays'},
+        {id: 'tagMapping', content: 'Product Tag Mapping'},
         {id: 'settings', content: 'Settings'},
     ];
 
     return (
-        <Tabs tabs={tabs} selected={selected} onSelect={handleTabChange}>
-            <Page>
+        <Page>
+            <Tabs tabs={tabs} selected={selected} onSelect={handleTabChange}>
                 <TabContent selectedTab={selected}/>
-            </Page>
-        </Tabs>
+            </Tabs>
+        </Page>
     );
 }
 
