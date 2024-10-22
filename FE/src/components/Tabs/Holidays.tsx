@@ -161,21 +161,28 @@ export function Holidays() {
                         <DataTable
                             columnContentTypes={['text', 'text', 'text']}
                             headings={['Name', 'Tags', 'Action']}
-                            rows={holidays?.map((holiday) => [
-                                holiday.name,
-                                <InlineStack gap="300">
-                                    {holiday.tags?.length > 0 ? (
-                                        holiday.tags.map((tag) => (
-                                            <Tag key={tag} onRemove={() => removeTag(holiday, tag)}>
-                                                {tag}
-                                            </Tag>
-                                        ))
-                                    ) : (
-                                        <span>No tags</span>
-                                    )}
-                                </InlineStack>,
-                                <Button variant="primary" onClick={() => openModal(holiday)}>Add New Tag</Button>,
-                            ]) || []}
+                            rows={holidays?.map((holiday) => {
+                                const allTags = [
+                                    ...(holiday.defaultTag?.tags || []), // Дефолтные теги
+                                    ...(holiday.tags || []), // Кастомные теги
+                                ];
+
+                                return [
+                                    holiday.name,
+                                    <InlineStack gap="300">
+                                        {allTags.length > 0 ? (
+                                            allTags.map((tag) => (
+                                                <Tag key={tag} onRemove={() => removeTag(holiday, tag)}>
+                                                    {tag}
+                                                </Tag>
+                                            ))
+                                        ) : (
+                                            <span>No tags</span>
+                                        )}
+                                    </InlineStack>,
+                                    <Button variant="primary" onClick={() => openModal(holiday)}>Add New Tag</Button>,
+                                ];
+                            }) || []}
                         />
 
                         <Pagination

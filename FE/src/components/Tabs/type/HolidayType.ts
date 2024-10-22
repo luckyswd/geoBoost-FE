@@ -1,7 +1,6 @@
 export type HolidaySetTagResponse = {
     value: boolean;
 }
-
 export type HolidaysResponse = {
     page?: number;
     totalCount: number;
@@ -11,5 +10,8 @@ export type HolidaysResponse = {
 export type Holiday = {
     id: number;
     name: string;
+    defaultTag?: {
+        tags: string[];
+    };
     tags: string[];
 };

@@ -31,6 +31,7 @@ class Popup {
                 if (!response.ok) {
                     throw new Error(`Ошибка HTTP: ${response.status}`);
                 }
+
                 this.setCookie(this.cookieName, 'true', 30);
                 console.log('Запрос успешно выполнен.');
             })
