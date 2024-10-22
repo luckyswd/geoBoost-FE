@@ -5,7 +5,7 @@ export type HolidaySetTagResponse = {
 export type HolidaysResponse = {
     page?: number;
     totalCount: number;
-    holidays: Holiday[];
+    items: Holiday[];
 }
 
 export type Holiday = {

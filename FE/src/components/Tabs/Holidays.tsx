@@ -38,7 +38,7 @@ export function Holidays() {
             method: "GET"
         });
 
-        setHolidays(response?.data?.holidays || []);
+        setHolidays(response?.data?.items || []);
         setTotalCount(response?.data?.totalCount || 0);
         setCurrentPage(response?.data?.page || 1);
 
@@ -161,17 +161,21 @@ export function Holidays() {
                         <DataTable
                             columnContentTypes={['text', 'text', 'text']}
                             headings={['Name', 'Tags', 'Action']}
-                            rows={holidays.map((holiday) => [
+                            rows={holidays?.map((holiday) => [
                                 holiday.name,
                                 <InlineStack gap="300">
-                                    {holiday.tags.map((tag) => (
-                                        <Tag key={tag} onRemove={() => removeTag(holiday, tag)}>
-                                            {tag}
-                                        </Tag>
-                                    ))}
+                                    {holiday.tags?.length > 0 ? (
+                                        holiday.tags.map((tag) => (
+                                            <Tag key={tag} onRemove={() => removeTag(holiday, tag)}>
+                                                {tag}
+                                            </Tag>
+                                        ))
+                                    ) : (
+                                        <span>No tags</span>
+                                    )}
                                 </InlineStack>,
                                 <Button variant="primary" onClick={() => openModal(holiday)}>Add New Tag</Button>,
-                            ])}
+                            ]) || []}
                         />
 
                         <Pagination
