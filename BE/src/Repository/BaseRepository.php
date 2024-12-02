@@ -2,15 +2,11 @@
 
 namespace App\Repository;
 
-use App\Entity\Shop;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 use Doctrine\Persistence\ManagerRegistry;
 
-/**
- * @extends ServiceEntityRepository<Shop>
- */
 abstract class BaseRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry, string $entityClass)

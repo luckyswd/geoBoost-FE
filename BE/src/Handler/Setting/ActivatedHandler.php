@@ -11,12 +11,12 @@ class ActivatedHandler
         Shop $shop,
         bool $isAdd,
     ): void {
-        $scriptTagService = new ScriptTagService($shop);
+        $scriptTagService = new ScriptTagService();
 
         if ($isAdd) {
-            $scriptTagService->addCustomScriptTag(getenv('CANONICAL_HOST') . '/popup.js');
+            $scriptTagService->addCustomScriptTag($shop, getenv('CANONICAL_HOST') . '/popup.js');
         } else {
-            $scriptTagService->deleteCustomScriptTag(getenv('CANONICAL_HOST') . '/popup.js');
+            $scriptTagService->deleteCustomScriptTag($shop, getenv('CANONICAL_HOST') . '/popup.js');
         }
     }
 }

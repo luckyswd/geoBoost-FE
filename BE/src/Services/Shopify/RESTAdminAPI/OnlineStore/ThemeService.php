@@ -53,7 +53,7 @@ class ThemeService
 
         foreach ($themes as $theme) {
             if ($theme['role'] == 'main') {
-                ShopLogger::info("\nНайдена активная тема: " . $theme['name']);
+                ShopLogger::info($shop->getDomain(), "\nНайдена активная тема: " . $theme['name']);
 
                 return $theme;
             }

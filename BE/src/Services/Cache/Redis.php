@@ -91,6 +91,6 @@ class Redis
         self::connect();
         $cacheKey = self::$project . $key;
 
-        return self::$redisClient->exists([$cacheKey]) > 0;
+        return self::$redisClient->exists($cacheKey) > 0;
     }
 }
