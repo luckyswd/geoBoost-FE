@@ -44,11 +44,11 @@ export function ProductTag() {
         }
 
         if (pagination === 'next' && startCursor.length > 0) {
-            queryString.append('after', startCursor);
+            queryString.append('after', endCursor);
         }
 
         if (pagination === 'prev' && endCursor.length > 0) {
-            queryString.append('before', endCursor);
+            queryString.append('before', startCursor);
         }
 
         const response = await apiFetch<ApiV1Response<ProductsResponse>>(`/product/?${queryString.toString()}`, {
@@ -66,7 +66,7 @@ export function ProductTag() {
 
     const debouncedSearch = useDebouncedCallback(async () => {
         await fetchProducts();
-    }, 200);
+    }, 300);
 
     const handleSearch = useCallback((value: string) => {
         setSearchQuery(value);

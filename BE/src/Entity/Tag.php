@@ -13,11 +13,11 @@ class Tag
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\ManyToOne(targetEntity: Shop::class, inversedBy: 'tags')]
+    #[ORM\ManyToOne(targetEntity: Shop::class, fetch: 'EXTRA_LAZY', inversedBy: 'tags')]
     #[ORM\JoinColumn(nullable: false)]
     private Shop $shop;
 
-    #[ORM\ManyToOne(targetEntity: Holiday::class, inversedBy: 'holidays')]
+    #[ORM\ManyToOne(targetEntity: Holiday::class, fetch: 'EXTRA_LAZY', inversedBy: 'tags')]
     #[ORM\JoinColumn(nullable: false)]
     private Holiday $holiday;
 

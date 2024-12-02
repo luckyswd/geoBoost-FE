@@ -18,11 +18,11 @@ abstract class BaseRepository extends ServiceEntityRepository
         parent::__construct($registry, $entityClass);
     }
 
-    /**
-     * @throws \Exception
-     */
-    protected function paginate(QueryBuilder $queryBuilder, int $page = 1, int $limit = 10): array
-    {
+    protected function paginate(
+        QueryBuilder $queryBuilder,
+        int $page = 1,
+        int $limit = 10
+    ): array {
         $queryBuilder
             ->setFirstResult(($page - 1) * $limit) // offset
             ->setMaxResults($limit); // limit
@@ -30,7 +30,7 @@ abstract class BaseRepository extends ServiceEntityRepository
         $paginator = new Paginator($queryBuilder);
 
         return [
-            'items' => $paginator->getQuery()->getArrayResult(),
+            'items' => $paginator->getQuery()->getResult(),
             'totalCount' => $paginator->count(),
             'page' => $page,
             'totalPages' => (int)ceil($paginator->count() / $limit),

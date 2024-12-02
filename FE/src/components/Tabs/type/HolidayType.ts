@@ -10,8 +10,5 @@ export type HolidaysResponse = {
 export type Holiday = {
     id: number;
     name: string;
-    defaultTag?: {
-        tags: string[];
-    };
     tags: string[];
 };

@@ -44,10 +44,10 @@ class Holiday
     #[ORM\Column(type: 'datetime', nullable: false)]
     private DateTime $holidayDate;
 
-    #[ORM\OneToMany(targetEntity: Tag::class, mappedBy: 'shop', cascade: ['persist', 'remove'], fetch: 'EAGER', orphanRemoval: true)]
+    #[ORM\OneToMany(targetEntity: Tag::class, mappedBy: 'holiday', cascade: ['persist', 'remove'], fetch: 'EXTRA_LAZY', orphanRemoval: true)]
     private Collection $tags;
 
-    #[ORM\OneToOne(targetEntity: DefaultTag::class, cascade: ['persist', 'remove'])]
+    #[ORM\OneToOne(targetEntity: DefaultTag::class, inversedBy: 'holiday', cascade: ['persist', 'remove'], fetch: 'EXTRA_LAZY')]
     #[ORM\JoinColumn(name: 'default_tag_id', referencedColumnName: 'id', nullable: true)]
     private ?DefaultTag $defaultTag = null;
 
@@ -188,22 +188,6 @@ class Holiday
         if ($this->tags->contains($tag)) {
             $this->tags->removeElement($tag);
         }
-    }
-
-    public function toArray(): array
-    {
-        return [
-            'id' => $this->id,
-            'name' => $this->name,
-            'country' => $this->country,
-            'year' => $this->year,
-            'timezone' => $this->timezone,
-            'type' => $this->type,
-            'translations' => $this->translations,
-            'holidayDate' => $this->holidayDate?->format('Y-m-d'),
-            'createdAt' => $this->createdAt?->format('Y-m-d H:i:s'),
-            'updatedAt' => $this->updatedAt?->format('Y-m-d H:i:s'),
-        ];
     }
 
     public function getDefaultTag(): ?DefaultTag

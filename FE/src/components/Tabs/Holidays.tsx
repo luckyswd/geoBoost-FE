@@ -93,33 +93,37 @@ export function Holidays() {
     };
 
     const addNewTag = async () => {
-        if (newTag.trim() !== '' && currentHoliday) {
-            const response = await apiFetch<ApiV1Response<HolidaySetTagResponse>>(`/holiday/${currentHoliday.id}/tag`, {
+        if (!newTag.trim() || !currentHoliday) {
+            return;
+        }
+
+        if (currentHoliday.tags.includes(newTag)) {
+            shopify.toast.show(`Tag "${newTag}" already exists`);
+            closeModal();
+            return;
+        }
+
+        await apiFetch<ApiV1Response<HolidaySetTagResponse>>(
+            `/holiday/${currentHoliday.id}/tag`,
+            {
                 method: "PATCH",
                 data: {
                     action: "add",
                     tag: newTag,
-                }
-            });
-
-            if (response.errors) {
-                shopify.toast.show(ERROR_MESSAGE, {
-                    isError: true
-                });
-                return;
+                },
             }
+        );
 
-            setHolidays((prevTags) =>
-                prevTags.map((holiday) =>
-                    holiday.id === currentHoliday.id
-                        ? {...holiday, tags: [...holiday.tags, newTag]}
-                        : holiday
-                )
-            );
+        setHolidays((prevTags) =>
+            prevTags.map((holiday) =>
+                holiday.id === currentHoliday.id
+                    ? { ...holiday, tags: [...holiday.tags, newTag] }
+                    : holiday
+            )
+        );
 
-            shopify.toast.show(`Tag "${newTag}" successfully added`);
-            closeModal();
-        }
+        shopify.toast.show(`Tag "${newTag}" successfully added`);
+        closeModal();
     };
 
     const handlePagination = async (action: string) => {
@@ -163,8 +167,7 @@ export function Holidays() {
                             headings={['Name', 'Tags', 'Action']}
                             rows={holidays?.map((holiday) => {
                                 const allTags = [
-                                    ...(holiday.defaultTag?.tags || []), // Дефолтные теги
-                                    ...(holiday.tags || []), // Кастомные теги
+                                    ...(holiday.tags || []),
                                 ];
 
                                 return [

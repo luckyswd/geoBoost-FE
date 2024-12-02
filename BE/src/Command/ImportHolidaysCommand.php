@@ -44,9 +44,14 @@ class ImportHolidaysCommand extends Command
         $progressBar->start();
 
         foreach ($countries as $country) {
+            if ($country !== 'USA') {
+                continue;
+            }
+
             try {
                 $holidaysProvider = Yasumi::create($country, $year);
                 $holidays = $holidaysProvider->getHolidays();
+
                 foreach ($holidays as $holiday) {
                     $existingHoliday = $this->entityManager->getRepository(Holiday::class)
                         ->findOneBy(['name' => $holiday->getName(), 'year' => $year]);
@@ -103,20 +108,25 @@ class ImportHolidaysCommand extends Command
     /**
      * Создает или обновляет DefaultTag для праздника.
      */
-    private function updateDefaultTag(Holiday $holidayEntity, string $holidayName): void
-    {
+    private function updateDefaultTag(
+        Holiday $holidayEntity,
+        string $holidayName
+    ): void {
         $tags = HolidayTags::getTagsByName($holidayName);
+
         if (!$tags) {
             return;
         }
 
         $defaultTag = $holidayEntity->getDefaultTag();
+
         if ($defaultTag === null) {
             $defaultTag = new DefaultTag();
             $holidayEntity->setDefaultTag($defaultTag);
         }
 
         $defaultTag->setTags($tags);
+
         $this->entityManager->persist($defaultTag);
     }
 }
