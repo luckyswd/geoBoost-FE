@@ -7,6 +7,7 @@ use App\Enum\Scopes;
 use App\Repository\ShopRepository;
 use App\Services\Cache\Redis;
 use App\Services\Setting\SettingService;
+use App\Services\Shop\ShopService;
 use App\Services\Shopify\ShopifyApiService;
 use App\Services\Shopify\ShopifyService;
 use App\Services\ShopLogger;
@@ -95,22 +96,14 @@ class ShopifyController extends AbstractController
     #[Route('/shopify/webhook/uninstalled', name: 'shopify_uninstalled', methods: ['POST'])]
     public function uninstalled(
         Request $request,
-        ShopRepository $shopRepository,
         EntityManagerInterface $entityManager,
     ): Response {
-        $data = json_decode($request->getContent(), true);
-        $domain = $data['domain'] ?? null;
-
-        if (!$domain) {
-            return new Response('Invalid webhook', Response::HTTP_BAD_REQUEST);
-        }
-
-        $shop = $shopRepository->findOneBy(['domain' => $domain]);
+        $shop = ShopService::getShop($request);
         $shop->setActive(false);
         $entityManager->flush();
 
         //Инвалидация access_token для shop, при удалени приложения
-        Redis::delete("$domain:access_token");
+        Redis::delete($shop->getDomain(). ":access_token");
 
         return new Response('Webhook received', Response::HTTP_OK);
     }
