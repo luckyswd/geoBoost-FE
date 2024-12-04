@@ -46,16 +46,4 @@ trait ApiResponseTrait
     ): void {
         $this->meta[$key] = $value;
     }
-
-    protected function getDomain(
-        Request $request
-    ): string {
-        $domain = $request->get('domain') ?? $request->getPayload()->get('domain') ?? null;
-
-        if (!$domain) {
-            throw new BadRequestHttpException("The 'domain' parameter is missing.");
-        }
-
-        return $domain;
-    }
 }

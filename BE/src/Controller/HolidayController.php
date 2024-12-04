@@ -23,10 +23,7 @@ class HolidayController extends AbstractController
         Request $request,
         HolidayService $holidayService,
     ): JsonResponse {
-        $holidays = $holidayService->getHolidayByDomain(
-            domain: $this->getDomain($request),
-            request: $request,
-        );
+        $holidays = $holidayService->getHolidayByDomain(request: $request);
 
         return $this->success($holidays);
     }
@@ -38,7 +35,6 @@ class HolidayController extends AbstractController
         Holiday $holiday,
     ): JsonResponse {
         $tags = $holidayService->addOrRemoveHolidayTags(
-            domain: $this->getDomain($request),
             request:  $request,
             holiday: $holiday
         );

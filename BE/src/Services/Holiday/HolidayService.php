@@ -6,15 +6,14 @@ use App\Entity\Holiday;
 use App\Entity\Tag;
 use App\Enum\HolidayActionTag;
 use App\Repository\HolidayRepository;
-use App\Repository\ShopRepository;
 use App\Repository\TagRepository;
+use App\Services\Shop\ShopService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 
 readonly class HolidayService
 {
     public function __construct(
-        private ShopRepository $shopRepository,
         private TagRepository $tagRepository,
         private EntityManagerInterface $entityManager,
         private HolidayRepository $holidayRepository,
@@ -22,14 +21,14 @@ readonly class HolidayService
     }
 
     public function addOrRemoveHolidayTags(
-        string  $domain,
         Request $request,
         Holiday $holiday,
     ): ?array {
+        $shop = ShopService::getShop($request);
+
         $tag = $request->getPayload()->get('tag');
         $action = $request->getPayload()->get('action');
 
-        $shop = $this->shopRepository->findOneBy(['domain' => $domain]);
         $shopTag = $this->tagRepository->findOneBy(['shop' => $shop, 'holiday' => $holiday]);
 
         if (!$shopTag) {
@@ -81,11 +80,8 @@ readonly class HolidayService
         return $shopTag->getTags();
     }
 
-    public function getHolidayByDomain(
-        string $domain,
-        Request $request,
-    ): array {
-        $shop = $this->shopRepository->findOneBy(['domain' => $domain]);
+    public function getHolidayByDomain(Request $request): array {
+        $shop = ShopService::getShop($request);
         $s = $request->get('s');
         $page = $request->get('page') ?? 1;
         $items = [];

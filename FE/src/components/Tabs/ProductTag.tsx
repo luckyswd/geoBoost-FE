@@ -214,7 +214,7 @@ export function ProductTag() {
                                         </Tag>
                                     ))}
                                 </InlineStack>,
-                                <Button variant="primary" onClick={() => openModal(product)}>Add New Tag</Button>,
+                                <Button variant="primary" onClick={() => openModal(product)}>Add tag</Button>,
                             ])}
                         />
 

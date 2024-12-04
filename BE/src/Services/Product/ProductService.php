@@ -2,16 +2,14 @@
 
 namespace App\Services\Product;
 
-use App\Entity\Shop;
+use App\Services\Shop\ShopService;
 use App\Services\Shopify\ShopifyApiService;
 use Symfony\Component\HttpFoundation\Request;
 
 class ProductService
 {
-    public function getProductResponse(
-        Request $request,
-        Shop $shop,
-    ): array {
+    public function getProductResponse(Request $request): array {
+        $shop = ShopService::getShop($request);
         $after = $request->query->get('after');
         $before = $request->query->get('before');
         $search = $request->query->get('s');

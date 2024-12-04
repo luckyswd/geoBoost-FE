@@ -3,8 +3,8 @@
 namespace App\Controller;
 
 use App\Repository\HolidayRepository;
-use App\Repository\ShopRepository;
 use App\Services\GeoLocationService;
+use App\Services\Shop\ShopService;
 use App\Services\ShopLogger;
 use App\Traits\ApiResponseTrait;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -19,20 +19,14 @@ class PopUpController extends AbstractController
 
     #[Route('/get-products', name: 'get-products', methods: ['POST'])]
     public function getProducts(
-        ShopRepository     $shopRepository,
-        HolidayRepository  $holidayRepository,
-        Request            $request,
+        HolidayRepository $holidayRepository,
+        Request $request,
         GeoLocationService $geoLocationService,
     ): JsonResponse {
-        $domain = $request->get('domain', 'max-geoboost.myshopify.com');
+        $shop = ShopService::getShop($request);
+        $domain = $shop->getDomain();
+
         $clientIp = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'];
-        ShopLogger::info($domain, "Начало обработки получения продуктов");
-
-        if (!$domain) {
-            ShopLogger::error($domain, "Домен не найден");
-
-            return $this->error('Domain not found', Response::HTTP_NOT_FOUND);
-        }
 
         if (!$clientIp) {
             ShopLogger::error($domain, "IP-адрес клиента не найден");
@@ -40,15 +34,10 @@ class PopUpController extends AbstractController
             return $this->error('Client IP not found', Response::HTTP_NOT_FOUND);
         }
 
-        $shop = $shopRepository->findOneBy(['domain' => $domain]);
-
-        if (!$shop) {
-            ShopLogger::error($domain, "Магазин не найден");
-
-            return $this->error('Shop not found', Response::HTTP_NOT_FOUND);
-        }
+        ShopLogger::info($domain, "Начало обработки получения продуктов");
 
         $geoData = $geoLocationService->getLocationByIp($clientIp);
+
         if (!$geoData) {
             ShopLogger::error($domain, "Геоданные не найдены");
 
