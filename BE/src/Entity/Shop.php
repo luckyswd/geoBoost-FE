@@ -55,13 +55,9 @@ class Shop
     #[ORM\OneToMany(targetEntity: Setting::class, mappedBy: 'shop', cascade: ['persist', 'remove'])]
     private Collection $settings;
 
-    #[ORM\OneToMany(targetEntity: Tag::class, mappedBy: 'shop', cascade: ['persist', 'remove'], fetch: 'EXTRA_LAZY', orphanRemoval: true)]
-    private Collection $tags;
-
     public function __construct()
     {
         $this->settings = new ArrayCollection();
-        $this->tags = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -213,24 +209,5 @@ class Shop
         $this->settings[] = $setting;
 
         $setting->setShop($this);
-    }
-
-    public function getTags(): Collection
-    {
-        return $this->tags;
-    }
-
-    public function addTag(Tag $tag): void
-    {
-        $this->tags[] = $tag;
-
-        $tag->setShop($this);
-    }
-
-    public function removeTag(Tag $tag): void
-    {
-        if($this->tags->contains($tag)) {
-            $this->tags->removeElement($tag);
-        }
     }
 }

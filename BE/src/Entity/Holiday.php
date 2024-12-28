@@ -3,8 +3,6 @@ namespace App\Entity;
 
 use App\Repository\HolidayRepository;
 use DateTime;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: HolidayRepository::class)]
@@ -43,18 +41,6 @@ class Holiday
 
     #[ORM\Column(type: 'datetime', nullable: false)]
     private DateTime $holidayDate;
-
-    #[ORM\OneToMany(targetEntity: Tag::class, mappedBy: 'holiday', cascade: ['persist', 'remove'], fetch: 'EXTRA_LAZY', orphanRemoval: true)]
-    private Collection $tags;
-
-    #[ORM\OneToOne(targetEntity: DefaultTag::class, inversedBy: 'holiday', cascade: ['persist', 'remove'], fetch: 'EXTRA_LAZY')]
-    #[ORM\JoinColumn(name: 'default_tag_id', referencedColumnName: 'id', nullable: true)]
-    private ?DefaultTag $defaultTag = null;
-
-    public function __construct()
-    {
-        $this->tags = new ArrayCollection();
-    }
 
     public function getId(): ?int
     {
@@ -167,37 +153,6 @@ class Holiday
     public function setHolidayDate(DateTime $holidayDate): self
     {
         $this->holidayDate = $holidayDate;
-
-        return $this;
-    }
-
-    public function getTags(): Collection
-    {
-        return $this->tags;
-    }
-
-    public function addTag(Tag $tag): void
-    {
-        $this->tags[] = $tag;
-
-        $tag->setHoliday($this);
-    }
-
-    public function removeTag(Tag $tag): void
-    {
-        if ($this->tags->contains($tag)) {
-            $this->tags->removeElement($tag);
-        }
-    }
-
-    public function getDefaultTag(): ?DefaultTag
-    {
-        return $this->defaultTag;
-    }
-
-    public function setDefaultTag(?DefaultTag $defaultTag): self
-    {
-        $this->defaultTag = $defaultTag;
 
         return $this;
     }

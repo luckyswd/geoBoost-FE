@@ -42,11 +42,7 @@ class HolidayRepository extends BaseRepository
         int $limit = 12,
         ?string $search = null
     ): array {
-        $builder = $this->createQueryBuilder('h')
-            ->leftJoin('h.defaultTag', 'dt')
-            ->leftJoin('h.tags', 't')
-            ->addSelect('dt')
-            ->addSelect('t');
+        $builder = $this->createQueryBuilder('h');
 
         if ($search) {
             $builder->where($builder->expr()->like('LOWER(h.name)', ':search'))

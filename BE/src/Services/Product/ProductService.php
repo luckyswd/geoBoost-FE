@@ -8,7 +8,8 @@ use Symfony\Component\HttpFoundation\Request;
 
 class ProductService
 {
-    public function getProductResponse(Request $request): array {
+    public function getProductResponse(Request $request): array
+    {
         $shop = ShopService::getShop($request);
         $after = $request->query->get('after');
         $before = $request->query->get('before');
@@ -123,8 +124,8 @@ class ProductService
         ";
     }
 
-
-    private function getHolidayTags(array $metaFields): array {
+    private function getHolidayTags(array $metaFields): array
+    {
         foreach ($metaFields as $metaFieldEdge) {
             if ($metaFieldEdge['node']['key'] === 'holiday_tags') {
                 return explode(',', $metaFieldEdge['node']['value']);
@@ -134,7 +135,8 @@ class ProductService
         return [];
     }
 
-    private function getCollectionsForProduct(array $collections): array {
+    private function getCollectionsForProduct(array $collections): array
+    {
         return array_map(function ($collectionEdge) {
             $collection = $collectionEdge['node'];
             $parts = explode('/', $collection['id']);

@@ -3,130 +3,80 @@
 namespace App\Command;
 
 use App\Entity\Holiday;
-use App\Entity\DefaultTag;
-use App\Enum\HolidayTags;
+use App\Repository\HolidayRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
-use Symfony\Component\Console\Helper\ProgressBar;
 use Yasumi\Yasumi;
 
-class ImportHolidaysCommand extends Command
+#[AsCommand(
+    name: 'app:import-holidays',
+    description: 'Получить праздники для всех стран из библиотеки Yasumi и сохранить их в базу данных',
+)]
+class ImportHolidaysCommand extends BaseCommand
 {
-    protected static $defaultName = 'app:import-holidays';
-    protected static $defaultDescription = 'Получить праздники для всех стран из библиотеки Yasumi и сохранить их в базу данных';
-
-    private EntityManagerInterface $entityManager;
-
-    public function __construct(EntityManagerInterface $entityManager)
-    {
-        parent::__construct();
-        $this->entityManager = $entityManager;
+    public function __construct(
+        private HolidayRepository $holidayRepository,
+        private EntityManagerInterface $entityManager,
+        ?string $name = null,
+    ) {
+        parent::__construct($name);
     }
 
-    protected function configure(): void
-    {
-        $this->setName(self::$defaultName)->setDescription(self::$defaultDescription);
-    }
-
-    protected function execute(InputInterface $input, OutputInterface $output): int
-    {
+    protected function execute(
+        InputInterface $input,
+        OutputInterface $output
+    ): int {
         $io = new SymfonyStyle($input, $output);
-        $startTime = microtime(true);
-        $startDateTime = date('Y-m-d H:i:s');
-        $io->section("Импорт праздников запущен: $startDateTime");
-        $year = (int)date('Y');
+
+        $currentYear = (int)date('Y');
+        $nextYear = $currentYear + 1;
+
+        $years = [$currentYear, $nextYear];
+
         $countries = Yasumi::getProviders();
 
-        $progressBar = new ProgressBar($output, count($countries));
-        $progressBar->start();
+        $total = count($countries) * count($years);
+        $io->progressStart($total);
 
-        foreach ($countries as $country) {
-            if ($country !== 'USA') {
-                continue;
-            }
-
-            try {
+        foreach ($years as $year) {
+            foreach ($countries as $country) {
                 $holidaysProvider = Yasumi::create($country, $year);
                 $holidays = $holidaysProvider->getHolidays();
 
                 foreach ($holidays as $holiday) {
-                    $existingHoliday = $this->entityManager->getRepository(Holiday::class)
-                        ->findOneBy(['name' => $holiday->getName(), 'year' => $year]);
+                    $holidayEntity = $this->holidayRepository->findOneBy([
+                        'name' => $holiday->getName(),
+                        'year' => $year,
+                        'country' => $country,
+                    ]);
 
-                    if ($existingHoliday) {
-                        $existingHoliday->setType($holiday->getType())
-                            ->setTranslations($holiday->translations)
-                            ->setTimezone($holiday->getTimezone()->getName())
-                            ->setHolidayDate($holiday)
-                            ->setCountry($country);
-
-                        // Обновляем DefaultTag для существующего праздника
-                        $this->updateDefaultTag($existingHoliday, $holiday->getName());
-
-                        $this->entityManager->persist($existingHoliday);
-                    } else {
+                    if (!$holidayEntity) {
                         $holidayEntity = new Holiday();
-                        $holidayEntity->setName($holiday->getName())
-                            ->setYear($year)
-                            ->setType($holiday->getType())
-                            ->setTranslations($holiday->translations)
-                            ->setTimezone($holiday->getTimezone()->getName())
-                            ->setHolidayDate($holiday)
-                            ->setCountry($country);
-
-                        // Создаем DefaultTag для нового праздника
-                        $this->updateDefaultTag($holidayEntity, $holiday->getName());
-
-                        $this->entityManager->persist($holidayEntity);
                     }
+
+                    $holidayEntity
+                        ->setName($holiday->getName())
+                        ->setYear($year)
+                        ->setType($holiday->getType())
+                        ->setTranslations($holiday->translations)
+                        ->setTimezone($holiday->getTimezone()->getName())
+                        ->setHolidayDate($holiday)
+                        ->setCountry($country);
+
+                    $this->entityManager->persist($holidayEntity);
                 }
 
-                $this->entityManager->flush();
-
-                $progressBar->advance();
-
-            } catch (\Exception $e) {
-                $io->error("Ошибка при импорте праздников для $country: " . $e->getMessage());
-                $progressBar->advance();
+                $io->progressAdvance();
             }
         }
 
-        $progressBar->finish();
-        $output->writeln('');
-        $endTime = microtime(true);
-        $executionTime = $endTime - $startTime;
-
-        $io->section('Команда завершена.');
-        $io->success(sprintf("Общее время выполнения: %.2f секунд.", $executionTime));
+        $this->entityManager->flush();
+        $io->progressFinish();
 
         return Command::SUCCESS;
-    }
-
-    /**
-     * Создает или обновляет DefaultTag для праздника.
-     */
-    private function updateDefaultTag(
-        Holiday $holidayEntity,
-        string $holidayName
-    ): void {
-        $tags = HolidayTags::getTagsByName($holidayName);
-
-        if (!$tags) {
-            return;
-        }
-
-        $defaultTag = $holidayEntity->getDefaultTag();
-
-        if ($defaultTag === null) {
-            $defaultTag = new DefaultTag();
-            $holidayEntity->setDefaultTag($defaultTag);
-        }
-
-        $defaultTag->setTags($tags);
-
-        $this->entityManager->persist($defaultTag);
     }
 }
