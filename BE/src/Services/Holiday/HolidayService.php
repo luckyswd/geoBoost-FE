@@ -2,7 +2,6 @@
 
 namespace App\Services\Holiday;
 
-use App\Entity\Holiday;
 use App\Repository\HolidayRepository;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -18,20 +17,18 @@ readonly class HolidayService
         $s = $request->get('s');
         $page = $request->get('page') ?? 1;
         $limit = $request->get('limit') ?? 12;
-        $items = [];
+        $country = $request->get('country');
+        $year = $request->get('year') ?? date('Y');
 
-        $holidays = $this->holidayRepository->searchHolidays(page: $page, limit: $limit, search: $s);
-
-        /**
-         * @var  Holiday $holiday
-         */
-        foreach ($holidays['items'] as $key => $holiday) {
-
-            $items[$key]['name'] = $holiday->getName();
-            $items[$key]['id'] = $holiday->getId();
-        }
-
-        $holidays['items'] = $items;
+        $holidays = $this->holidayRepository->searchHolidays(
+            page: $page,
+            limit: $limit,
+            search: $s,
+            country: $country,
+            year: $year
+        );
+        $holidays['countries'] = $this->holidayRepository->findCountries();
+        $holidays['years'] = $this->holidayRepository->findYears();
 
         return $holidays;
     }

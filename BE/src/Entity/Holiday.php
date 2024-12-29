@@ -4,15 +4,18 @@ namespace App\Entity;
 use App\Repository\HolidayRepository;
 use DateTime;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: HolidayRepository::class)]
-#[ORM\Table(name: 'holiday', uniqueConstraints: [new ORM\UniqueConstraint(name: 'holiday_unique', columns: ['holiday'])])]
+#[ORM\Table(name: 'holiday')]
+#[ORM\UniqueConstraint(name: 'holiday_unique', columns: ['holiday'])]
 #[ORM\HasLifecycleCallbacks]
 class Holiday
 {
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: 'IDENTITY')]
     #[ORM\Column(name: 'id', type: 'integer')]
+    #[Groups(['Holiday.all'])]
     protected int $id;
 
     #[ORM\Column(name: 'created_at', type: 'datetime', nullable: true)]
@@ -22,12 +25,15 @@ class Holiday
     protected ?DateTime $updatedAt;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    #[Groups(['Holiday.all'])]
     private string $name;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    #[Groups(['Holiday.all'])]
     private string $country;
 
     #[ORM\Column(type: 'integer', nullable: true)]
+    #[Groups(['Holiday.all'])]
     private int $year;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
@@ -40,6 +46,7 @@ class Holiday
     private ?array $translations;
 
     #[ORM\Column(type: 'datetime', nullable: false)]
+    #[Groups(['Holiday.all'])]
     private DateTime $holidayDate;
 
     public function getId(): ?int

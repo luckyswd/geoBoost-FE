@@ -34,13 +34,12 @@ class HolidayRepository extends BaseRepository
             ->getResult();
     }
 
-    /**
-     * Поиск праздников с пагинацией и возможностью фильтрации по названию.
-     */
     public function searchHolidays(
         int $page,
         int $limit = 12,
-        ?string $search = null
+        ?string $search = null,
+        ?string $country = null,
+        ?string $year = null
     ): array {
         $builder = $this->createQueryBuilder('h');
 
@@ -49,6 +48,37 @@ class HolidayRepository extends BaseRepository
                 ->setParameter('search', '%' . strtolower($search) . '%');
         }
 
+        if ($country) {
+            $builder->andWhere('h.country = :country')
+                ->setParameter('country', $country);
+        }
+
+        if ($year) {
+            $builder->andWhere('h.year = :year')
+                ->setParameter('year', $year);
+        }
+
         return $this->paginate($builder, $page, $limit);
+    }
+
+
+    public function findCountries(): array
+    {
+        $countries = $this->createQueryBuilder('h')
+            ->select('DISTINCT h.country')
+            ->getQuery()
+            ->getResult();
+
+        return array_map(fn($item) => $item['country'], $countries);
+    }
+
+    public function findYears(): array
+    {
+        $years = $this->createQueryBuilder('h')
+            ->select('DISTINCT h.year')
+            ->getQuery()
+            ->getResult();
+
+        return array_map(fn($item) => (string) $item['year'], $years);
     }
 }

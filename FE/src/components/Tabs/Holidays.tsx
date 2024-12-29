@@ -1,49 +1,60 @@
-import {useState, useCallback, useEffect} from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
     Card,
     DataTable,
     TextField,
-    Button,
-    Modal,
-    Tag,
     BlockStack,
     Pagination,
-    InlineStack,
-    SkeletonBodyText, Text,
+    SkeletonBodyText,
+    Text,
+    Select, InlineGrid,
 } from '@shopify/polaris';
-import {ApiV1Response, ERROR_MESSAGE} from "../../type/global";
-import {apiFetch} from "../../api";
-import {Holiday, HolidaySetTagResponse, HolidaysResponse} from "./type/HolidayType";
-import {useDebouncedCallback} from "use-debounce";
+import { ApiV1Response } from "../../type/global";
+import { apiFetch } from "../../api";
+import { Holiday, HolidaysResponse } from "./type/HolidayType";
+import { useDebouncedCallback } from "use-debounce";
 
 export function Holidays() {
     const [searchQuery, setSearchQuery] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [holidays, setHolidays] = useState<Holiday[]>([]);
     const [isLoading, setIsLoading] = useState(false);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [currentHoliday, setCurrentHoliday] = useState<Holiday>();
-    const [newTag, setNewTag] = useState('');
     const [totalCount, setTotalCount] = useState(0);
+    const [country, setCountry] = useState<string>('');
+    const [countries, setCountries] = useState<string[]>([]);
+    const [year, setYear] = useState<string>('');
+    const [years, setYears] = useState<string[]>([]);
     const itemsPerPage = 12;
-
-    useEffect(() => {
-        fetchHolidays(currentPage);
-    }, []);
 
     const fetchHolidays = async (page: number) => {
         setIsLoading(true);
 
-        const response = await apiFetch<ApiV1Response<HolidaysResponse>>(`/holiday/?page=${page}&s=${searchQuery}`, {
+        let queryParams = `?page=${page}&s=${searchQuery}`;
+
+        if (country) {
+            queryParams += `&country=${country}`;
+        }
+
+        if (year) {
+            queryParams += `&year=${year}`;
+        }
+
+        const response = await apiFetch<ApiV1Response<HolidaysResponse>>(`/holiday/${queryParams}`, {
             method: "GET"
         });
 
         setHolidays(response?.data?.items || []);
+        setCountries(response?.data?.countries || []);
+        setYears(response?.data?.years || []);
         setTotalCount(response?.data?.totalCount || 0);
         setCurrentPage(response?.data?.page || 1);
 
         setIsLoading(false);
     };
+
+    useEffect(() => {
+        fetchHolidays(currentPage);
+    }, [country, year]);
 
     const debouncedSearch = useDebouncedCallback(async () => {
         await fetchHolidays(currentPage);
@@ -54,77 +65,6 @@ export function Holidays() {
         setCurrentPage(1);
         debouncedSearch();
     }, [debouncedSearch]);
-
-    const removeTag = useCallback(async (holiday: Holiday, tag: string) => {
-        const response = await apiFetch<ApiV1Response<HolidaySetTagResponse>>(`/holiday/${holiday.id}/tag`, {
-            method: "PATCH",
-            data: {
-                action: "remove",
-                tag: tag,
-            }
-        });
-
-        if (response.errors) {
-            shopify.toast.show(ERROR_MESSAGE, {
-                isError: true
-            });
-            return;
-        }
-
-        setHolidays((prevTags) =>
-            prevTags.map((prevHoliday) =>
-                prevHoliday.id === holiday.id
-                    ? {...prevHoliday, tags: prevHoliday.tags.filter((t) => t !== tag)}
-                    : prevHoliday
-            )
-        );
-
-        shopify.toast.show(`Tag "${tag}" successfully removed`);
-    }, []);
-
-    const openModal = (holiday: Holiday) => {
-        setCurrentHoliday(holiday);
-        setIsModalOpen(true);
-    };
-
-    const closeModal = () => {
-        setIsModalOpen(false);
-        setNewTag('');
-    };
-
-    const addNewTag = async () => {
-        if (!newTag.trim() || !currentHoliday) {
-            return;
-        }
-
-        if (currentHoliday.tags.includes(newTag)) {
-            shopify.toast.show(`Tag "${newTag}" already exists`);
-            closeModal();
-            return;
-        }
-
-        await apiFetch<ApiV1Response<HolidaySetTagResponse>>(
-            `/holiday/${currentHoliday.id}/tag`,
-            {
-                method: "PATCH",
-                data: {
-                    action: "add",
-                    tag: newTag,
-                },
-            }
-        );
-
-        setHolidays((prevTags) =>
-            prevTags.map((holiday) =>
-                holiday.id === currentHoliday.id
-                    ? { ...holiday, tags: [...holiday.tags, newTag] }
-                    : holiday
-            )
-        );
-
-        shopify.toast.show(`Tag "${newTag}" successfully added`);
-        closeModal();
-    };
 
     const handlePagination = async (action: string) => {
         const newPage = action === 'onPrevious'
@@ -137,13 +77,43 @@ export function Holidays() {
         }
     };
 
+    const countryOptions = [
+        { label: 'All', value: '' },
+        ...countries.map(country => ({
+            label: country,
+            value: country
+        }))
+    ];
+
+    const yearOptions = years.map(year => ({
+        label: year,
+        value: year
+    }));
+
     return (
         <BlockStack gap="200">
             <Card>
                 <Text variant="headingMd" as="h3" alignment="center">
-                    Here you can explore all the holidays celebrated in our system, as well as the tags associated with them.<br/>
+                    Here you can explore all the holidays celebrated in our system, as well as the tags associated with them.<br />
                     The user-friendly interface allows you to easily manage tags by adding new ones or deleting existing ones
                 </Text>
+            </Card>
+
+            <Card>
+                <InlineGrid gap="400" columns={2}>
+                    <Select
+                        label="Select Country"
+                        options={countryOptions}
+                        value={country}
+                        onChange={(value) => setCountry(value)}
+                    />
+                    <Select
+                        label="Select Year"
+                        options={yearOptions}
+                        value={year}
+                        onChange={(value) => setYear(value)}
+                    />
+                </InlineGrid>
             </Card>
 
             <Card>
@@ -152,7 +122,7 @@ export function Holidays() {
                     value={searchQuery}
                     onChange={handleSearch}
                     autoComplete="off"
-                    placeholder="Search for a holiday..."
+                    placeholder="Search by holiday name..."
                     variant="borderless"
                 />
             </Card>
@@ -163,27 +133,14 @@ export function Holidays() {
                 ) : (
                     <>
                         <DataTable
-                            columnContentTypes={['text', 'text', 'text']}
-                            headings={['Name', 'Tags', 'Action']}
+                            columnContentTypes={['text', 'text', 'numeric', 'text']}
+                            headings={['Name', 'Country', 'Year', 'Holiday date']}
                             rows={holidays?.map((holiday) => {
-                                const allTags = [
-                                    ...(holiday.tags || []),
-                                ];
-
                                 return [
                                     holiday.name,
-                                    <InlineStack gap="300">
-                                        {allTags.length > 0 ? (
-                                            allTags.map((tag) => (
-                                                <Tag key={tag} onRemove={() => removeTag(holiday, tag)}>
-                                                    {tag}
-                                                </Tag>
-                                            ))
-                                        ) : (
-                                            <span>No tags</span>
-                                        )}
-                                    </InlineStack>,
-                                    <Button variant="primary" onClick={() => openModal(holiday)}>Add New Tag</Button>,
+                                    holiday.country,
+                                    holiday.year,
+                                    holiday.holidayDate,
                                 ];
                             }) || []}
                         />
@@ -199,26 +156,6 @@ export function Holidays() {
                     </>
                 )}
             </Card>
-
-            <Modal
-                open={isModalOpen}
-                onClose={closeModal}
-                title={`Add a new tag for ${currentHoliday?.name}`}
-                primaryAction={{
-                    content: 'Add',
-                    onAction: addNewTag,
-                }}
-            >
-                <Modal.Section>
-                    <TextField
-                        label="New Tag"
-                        value={newTag}
-                        onChange={(value) => setNewTag(value)}
-                        autoComplete="off"
-                        placeholder="Enter new tag"
-                    />
-                </Modal.Section>
-            </Modal>
         </BlockStack>
     );
 }
