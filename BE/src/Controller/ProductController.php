@@ -25,4 +25,18 @@ class ProductController extends AbstractController
             return $this->error($e->getMessage());
         }
     }
+
+    #[Route('/set', name: 'set_holidays_product', methods: ["POST"])]
+    public function setProduct(
+        Request $request,
+        ProductService $productService,
+    ): JsonResponse {
+        try {
+            $productService->setHolidayProduct(request: $request);
+
+            return $this->success();
+        } catch (\Throwable $e) {
+            return $this->error($e->getMessage());
+        }
+    }
 }

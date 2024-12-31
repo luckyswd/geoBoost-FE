@@ -7,6 +7,7 @@ use App\Services\GeoLocationService;
 use App\Services\Shop\ShopService;
 use App\Services\ShopLogger;
 use App\Traits\ApiResponseTrait;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -22,8 +23,9 @@ class PopUpController extends AbstractController
         HolidayRepository $holidayRepository,
         Request $request,
         GeoLocationService $geoLocationService,
+        EntityManagerInterface $entityManager,
     ): JsonResponse {
-        $shop = ShopService::getShop($request);
+        $shop = ShopService::getShop($request, $entityManager);
         $domain = $shop->getDomain();
 
         $clientIp = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'];

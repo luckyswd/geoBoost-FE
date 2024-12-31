@@ -9,26 +9,29 @@ import {
     BlockStack,
     Pagination,
     InlineStack,
-    SkeletonBodyText, Text, Link, Badge,
+    SkeletonBodyText, Text, Link, Badge, Autocomplete, LegacyStack,
 } from '@shopify/polaris';
 import {ApiV1Response, ERROR_MESSAGE} from "../../type/global";
 import {apiFetch} from "../../api";
-import {HolidaySetTagResponse} from "./type/HolidayType";
+import {HolidayNamesFilter, HolidayNamesResponse} from "./type/HolidayType";
 import {useDebouncedCallback} from "use-debounce";
-import {HolidayTag, Product, ProductsResponse} from "./type/ProductType";
+import {Product, ProductsResponse} from "./type/ProductType";
 import {Tone} from "@shopify/polaris/build/ts/src/components/Badge";
 
-export function ProductTag() {
+export function ProductHoliday() {
     const [searchQuery, setSearchQuery] = useState('');
     const [products, setProducts] = useState<Product[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [currentProduct, setCurrentProduct] = useState<Product>();
-    const [newTag, setNewTag] = useState('');
     const [hasNextPage, setHasNextPage] = useState(false);
     const [hasPreviousPage, setHasPreviousPage] = useState(false);
     const [startCursor, setStartCursor] = useState('');
     const [endCursor, setEndCursor] = useState('');
+    const [selectedHolidaysNameOptions, setSelectedHolidaysNameOptions] = useState<string[]>([]);
+    const [stringValueHolidayName, setStringValueHolidayName] = useState('');
+    const [filterHolidayNameOptions, setFilterHolidayNameOptions] = useState<HolidayNamesFilter[]>([]);
+    const [holidaysNameOptions, setHolidaysNameOptions] = useState(filterHolidayNameOptions);
 
     useEffect(() => {
         fetchProducts();
@@ -73,71 +76,35 @@ export function ProductTag() {
         debouncedSearch();
     }, [debouncedSearch]);
 
-    const removeTag = useCallback(async (holiday: Product, tag: HolidayTag) => {
-        const response = await apiFetch<ApiV1Response<HolidaySetTagResponse>>(`/holiday/${holiday.id}/tag`, {
-            method: "PATCH",
-            data: {
-                action: "remove",
-                tag: tag,
-            }
-        });
-
-        if (response.errors) {
-            shopify.toast.show(ERROR_MESSAGE, {
-                isError: true
-            });
-            return;
-        }
-
-        // setProducts((prevTags) =>
-        //     prevTags.map((prevHoliday) =>
-        //         prevHoliday.id === holiday.id
-        //             ? {...prevHoliday, tags: prevHoliday.tags.filter((t) => t !== tag)}
-        //             : prevHoliday
-        //     )
-        // );
-
-        shopify.toast.show(`Tag "${tag}" successfully removed`);
-    }, []);
-
     const openModal = (product: Product) => {
         setCurrentProduct(product);
+        fetchHolidayNames();
         setIsModalOpen(true);
     };
 
     const closeModal = () => {
         setIsModalOpen(false);
-        setNewTag('');
+        // setNewTag('');
     };
 
-    const addNewTag = async () => {
-        if (newTag.trim() !== '' && currentProduct) {
-            const response = await apiFetch<ApiV1Response<HolidaySetTagResponse>>(`/holiday/${currentProduct.id}/tag`, {
-                method: "PATCH",
+    const addHoliday = async () => {
+        try {
+            await apiFetch(`/product/set`, {
+                method: 'POST',
                 data: {
-                    action: "add",
-                    tag: newTag,
-                }
+                    productId: currentProduct?.id,
+                    holidayNames: selectedHolidaysNameOptions.join(','),
+                },
             });
 
-            if (response.errors) {
-                shopify.toast.show(ERROR_MESSAGE, {
-                    isError: true
-                });
-                return;
-            }
-
-            // setProducts((prevTags) =>
-            //     prevTags.map((holiday) =>
-            //         holiday.id === currentHoliday.id
-            //             ? {...holiday, tags: [...holiday.tags, newTag]}
-            //             : holiday
-            //     )
-            // );
-
-            shopify.toast.show(`Tag "${newTag}" successfully added`);
-            closeModal();
+            shopify.toast.show(`Holidays successfully added`);
+        } catch (error) {
+            shopify.toast.show(ERROR_MESSAGE, {
+                isError: true
+            });
         }
+
+        closeModal();
     };
 
     const capitalizeFirstLetter = (text: string): string => {
@@ -156,6 +123,79 @@ export function ProductTag() {
     const trimShopifyDomain = (url: string | undefined): string => {
         return url?.replace('.myshopify.com', '') || '';
     };
+
+    const fetchHolidayNames = async () => {
+        setIsLoading(true);
+
+        const response = await apiFetch<ApiV1Response<HolidayNamesResponse[]>>(`/holiday/names`, {
+            method: "GET"
+        });
+
+        const data = response?.data || [];
+
+        const optionsHolidayNames = data.map((holidayName) => {
+            const countriesArray = holidayName.countries.split(",");
+            const displayedCountries = countriesArray.slice(0, 3).join(", ");
+            const remainingCount = countriesArray.length - 3;
+
+            const countriesLabel = remainingCount > 0
+                ? `${displayedCountries} and ${remainingCount} more`
+                : displayedCountries;
+
+            return {
+                label: `${holidayName.name} (${countriesLabel})`,
+                value: holidayName.name,
+            };
+        });
+
+        setFilterHolidayNameOptions(optionsHolidayNames);
+        setHolidaysNameOptions(optionsHolidayNames)
+        setIsLoading(false);
+    };
+
+    const updateText = useCallback(
+        (value: string) => {
+            setStringValueHolidayName(value);
+
+            if (value === '') {
+                setHolidaysNameOptions(filterHolidayNameOptions);
+                return;
+            }
+
+            const filterRegex = new RegExp(value, 'i');
+            const resultOptions = filterHolidayNameOptions.filter((option) =>
+                option.label.match(filterRegex),
+            );
+
+            setHolidaysNameOptions(resultOptions);
+        },
+        [filterHolidayNameOptions],
+    );
+
+    const removeTag = useCallback(
+        (tag: string) => () => {
+            const options = [...selectedHolidaysNameOptions];
+            options.splice(options.indexOf(tag), 1);
+            setSelectedHolidaysNameOptions(options);
+        },
+        [selectedHolidaysNameOptions],
+    );
+
+    const verticalContentMarkup =
+        selectedHolidaysNameOptions.length > 0 ? (
+            <LegacyStack spacing="extraTight" alignment="center">
+                {selectedHolidaysNameOptions.map((option) => {
+                    let tagLabel = '';
+                    tagLabel = option.replace('_', ' ');
+                    tagLabel = titleCase(tagLabel);
+                    return (
+                        <Tag key={`option${option}`} onRemove={removeTag(option)}>
+                            {tagLabel}
+                        </Tag>
+                    );
+                })}
+            </LegacyStack>
+        ) : null;
 
     return (
         <BlockStack gap="200">
@@ -184,7 +224,7 @@ export function ProductTag() {
                     <>
                         <DataTable
                             columnContentTypes={['text', 'text', 'text', 'text', 'text', 'text']}
-                            headings={['Product', 'Status', 'Collection', 'Holiday Tags', 'Action']}
+                            headings={['Product', 'Status', 'Collection', 'Holidays', 'Action']}
                             rows={products.map((product) => [
                                 <Link
                                     url={`https://admin.shopify.com/store/${trimShopifyDomain(shopify.config.shop)}/products/${product.id}`}
@@ -208,13 +248,13 @@ export function ProductTag() {
                                     ))}
                                 </InlineStack>,
                                 <InlineStack gap="300">
-                                    {product.holidayTags && product.holidayTags.map((tag) => (
-                                        <Tag key={tag.key} onRemove={() => removeTag(product, tag)}>
-                                            {tag.value}
+                                    {product.holidayNames && product.holidayNames.map((name) => (
+                                        <Tag key={name}>
+                                            {name}
                                         </Tag>
                                     ))}
                                 </InlineStack>,
-                                <Button variant="primary" onClick={() => openModal(product)}>Add tag</Button>,
+                                <Button variant="primary" onClick={() => openModal(product)}>Add holidays</Button>,
                             ])}
                         />
 
@@ -232,22 +272,48 @@ export function ProductTag() {
             <Modal
                 open={isModalOpen}
                 onClose={closeModal}
-                title={`Add a new tag for ${currentProduct?.title}`}
+                title={`Add holidays for "${currentProduct?.title}"`}
                 primaryAction={{
-                    content: 'Add',
-                    onAction: addNewTag,
+                    content: 'Save',
+                    onAction: addHoliday,
                 }}
             >
                 <Modal.Section>
-                    <TextField
-                        label="New Tag"
-                        value={newTag}
-                        onChange={(value) => setNewTag(value)}
-                        autoComplete="off"
-                        placeholder="Enter new tag"
-                    />
+                    <>
+                        {isLoading ? (
+                            <SkeletonBodyText lines={6} />
+                        ) : (
+                            <>
+                                <Autocomplete
+                                    allowMultiple
+                                    options={holidaysNameOptions}
+                                    selected={selectedHolidaysNameOptions}
+                                    textField={
+                                        <Autocomplete.TextField
+                                            onChange={updateText}
+                                            label="Holidays"
+                                            value={stringValueHolidayName}
+                                            placeholder="New Year’s Day, Christmas ..."
+                                            verticalContent={verticalContentMarkup}
+                                            autoComplete="off"
+                                        />
+                                    }
+                                    onSelect={setSelectedHolidaysNameOptions}
+                                    listTitle="Suggested Tags"
+                                />
+                            </>
+                        )}
+                    </>
                 </Modal.Section>
             </Modal>
         </BlockStack>
     );
+
+    function titleCase(string: string) {
+        return string
+            .toLowerCase()
+            .split(' ')
+            .map((word) => word.replace(word[0], word[0].toUpperCase()))
+            .join('');
+    }
 }

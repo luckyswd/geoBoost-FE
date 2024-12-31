@@ -12,7 +12,7 @@ function TabsComponent() {
     const tabs = [
         {id: 'dashboard', content: 'Dashboard'},
         {id: 'holidays', content: 'Holidays'},
-        {id: 'tagMapping', content: 'Product Tag Mapping'},
+        {id: 'holidayMapping', content: 'Product holiday Mapping'},
         {id: 'settings', content: 'Settings'},
     ];
 

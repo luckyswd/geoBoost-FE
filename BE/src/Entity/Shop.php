@@ -52,7 +52,7 @@ class Shop
     #[ORM\Column(type: 'boolean', nullable: true, options: ['default' => 0])]
     private ?bool $active = false;
 
-    #[ORM\OneToMany(targetEntity: Setting::class, mappedBy: 'shop', cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(targetEntity: Setting::class, mappedBy: 'shop')]
     private Collection $settings;
 
     public function __construct()

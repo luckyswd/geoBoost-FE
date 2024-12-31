@@ -42,7 +42,7 @@ export default function PopupActivated() {
     return (
         <Card>
             <BlockStack gap="300">
-                <Text variant="headingMd" as="h3">Enable/Disable Product Popup</Text>
+                <Text variant="headingMd" as="h3">Enable/Disable Product Popup:</Text>
                 <ButtonGroup>
                     <Button
                         onClick={() => togglePopup(true)}

@@ -8,7 +8,7 @@ use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: HolidayRepository::class)]
 #[ORM\Table(name: 'holiday')]
-#[ORM\UniqueConstraint(name: 'holiday_unique', columns: ['holiday'])]
+#[ORM\UniqueConstraint(name: 'holiday_unique', columns: ['name', 'year', 'country', 'holiday_date'])]
 #[ORM\HasLifecycleCallbacks]
 class Holiday
 {

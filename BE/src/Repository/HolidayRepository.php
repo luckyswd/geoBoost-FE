@@ -61,7 +61,6 @@ class HolidayRepository extends BaseRepository
         return $this->paginate($builder, $page, $limit);
     }
 
-
     public function findCountries(): array
     {
         $countries = $this->createQueryBuilder('h')
@@ -80,5 +79,21 @@ class HolidayRepository extends BaseRepository
             ->getResult();
 
         return array_map(fn($item) => (string) $item['year'], $years);
+    }
+
+    public function findHolidayGroupName(): array
+    {
+        $connection = $this->getEntityManager()->getConnection();
+
+        $sql = "
+            SELECT h.name, GROUP_CONCAT(country ORDER BY country SEPARATOR ', ') AS countries
+            FROM holiday h
+            GROUP BY h.name
+        ";
+
+        $stmt = $connection->prepare($sql);
+        $resultSet = $stmt->executeQuery();
+
+        return $resultSet->fetchAllAssociative();
     }
 }

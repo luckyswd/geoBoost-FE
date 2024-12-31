@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Repository\HolidayRepository;
 use App\Services\Holiday\HolidayService;
 use App\Traits\ApiResponseTrait;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -23,5 +24,11 @@ class HolidayController extends AbstractController
         $holidays = $holidayService->getHolidayByDomain(request: $request);
 
         return $this->success($holidays, Response::HTTP_OK, ['Holiday.all']);
+    }
+
+    #[Route('/names', name: 'get_holiday_names_countries', methods: ["GET"])]
+    public function getHolidayCountries(HolidayRepository $holidayRepository): JsonResponse
+    {
+        return $this->success($holidayRepository->findHolidayGroupName());
     }
 }

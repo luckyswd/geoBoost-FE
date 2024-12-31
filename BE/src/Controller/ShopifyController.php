@@ -98,7 +98,7 @@ class ShopifyController extends AbstractController
         Request $request,
         EntityManagerInterface $entityManager,
     ): Response {
-        $shop = ShopService::getShop($request);
+        $shop = ShopService::getShop($request, $entityManager);
         $shop->setActive(false);
         $entityManager->flush();
 

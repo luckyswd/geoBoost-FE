@@ -13,16 +13,11 @@ export type Product = {
     handle: string;
     title: string;
     status: string;
-    holidayTags: HolidayTag[];
+    holidayNames: string[];
     collection: Collection[];
 };
 
 export type Collection = {
     id: string;
     title: string;
-}
-
-export type HolidayTag = {
-    key: string;
-    value: string
 }

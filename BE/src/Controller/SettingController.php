@@ -8,6 +8,7 @@ use App\Services\Setting\SettingService;
 use App\Services\Shop\ShopService;
 use App\Services\ShopLogger;
 use App\Traits\ApiResponseTrait;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -23,8 +24,9 @@ class SettingController extends AbstractController
     public function getSetting(
         SettingService $settingService,
         Request $request,
+        EntityManagerInterface $entityManager,
     ): JsonResponse {
-        $shop = ShopService::getShop($request);
+        $shop = ShopService::getShop($request, $entityManager);
         $key = $request->get('key');
 
         if ($key !== 'all' && !SettingKey::tryFrom($key)) {
@@ -50,8 +52,9 @@ class SettingController extends AbstractController
     public function setSetting(
         SettingService $settingService,
         Request $request,
+        EntityManagerInterface $entityManager,
     ): JsonResponse {
-        $shop = ShopService::getShop($request);
+        $shop = ShopService::getShop($request, $entityManager);
         $key = $request->getPayload()->get('key');
         $value = $request->getPayload()->get('value');
 
@@ -61,7 +64,8 @@ class SettingController extends AbstractController
 
         try {
             match ($key) {
-                SettingKey::ACTIVATED->value => (new ActivatedHandler())($shop, $value)
+                SettingKey::ACTIVATED->value => (new ActivatedHandler())($shop, $value),
+                default => null
             };
 
             $settingService->setSetting(shop: $shop, key: $key, value: $value);

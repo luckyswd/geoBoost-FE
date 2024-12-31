@@ -10,6 +10,16 @@ export type HolidaysResponse = {
     years: string[];
 }
 
+export type HolidayNamesResponse = {
+    name: string;
+    countries: string;
+}
+
+export type HolidayNamesFilter = {
+    label: string;
+    value: string;
+}
+
 export type Holiday = {
     id: number;
     name: string;
